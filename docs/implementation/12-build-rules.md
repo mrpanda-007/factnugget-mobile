@@ -71,4 +71,6 @@ When uncertain, **ask for clarification rather than making assumptions**.
 
 Read the relevant document **before** writing any code.
 
-This index is the complete list of authoritative documents. `docs/archive/` may contain superseded drafts (e.g. the pre-split monolithic spec) kept for historical reference only — anything there is never authoritative and must never be read for implementation guidance, even if it appears to cover the same topic as a document above.
+This index is the complete list of authoritative documents for engineering architecture. `docs/archive/` may contain superseded drafts (e.g. the pre-split monolithic spec) kept for historical reference only — anything there is never authoritative and must never be read for implementation guidance, even if it appears to cover the same topic as a document above.
+
+`docs/design/` is a sibling specification, equally authoritative, for visual/UX decisions: color, typography, spacing, motion, component architecture, screen map, and asset strategy. Read it alongside this index — `01-project-architecture.md#theme--design-tokens` and `#components` defer to it rather than restating its contents.

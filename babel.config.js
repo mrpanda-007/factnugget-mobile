@@ -31,7 +31,7 @@ module.exports = function (api) {
             '@services': './services',
             '@store': './store',
             '@database': './database',
-            '@types': './types',
+            '@app-types': './types',
             '@constants': './constants',
             '@utils': './utils',
             '@animations': './animations',
