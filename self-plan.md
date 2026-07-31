@@ -39,7 +39,6 @@ When implementing code, designing architecture, or making technical decisions, a
 [x] Configure Claude Code
 [x] Setup linting
 [x] Setup formatting
-[ ] Setup CI pipeline
 [x] Create README
 
 Deliverables:
@@ -50,19 +49,13 @@ Deliverables:
 PHASE 1 — PRODUCT PLANNING
 ================================================================================
 
-[ ] Product Vision
-[ ] Product Principles
-[ ] Target Audience
-[ ] User Personas
+[x] Product Vision
+[x] Product Principles
+[x] Target Audience
+[x] User Personas
 [ ] Monetisation Strategy
-[ ] Growth Strategy
-[ ] Roadmap
-[ ] MVP Definition
-[ ] Feature Backlog
-
-Deliverables:
-□ docs/00-product-vision.md
-□ docs/01-prd.md
+[x] User flows
+[x] MVP Definition
 
 ================================================================================
 PHASE 2 — INFORMATION ARCHITECTURE
