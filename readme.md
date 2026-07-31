@@ -100,35 +100,26 @@ Analytics
 
 Educational content is managed independently from user data.
 
+Full layer-by-layer detail (Repositories, Services, TanStack Query, Zustand, SQLite) is defined in [`docs/implementation/01-project-architecture.md`](docs/implementation/01-project-architecture.md); this diagram is a summary, not a replacement.
+
 ---
 
 # Project Structure
 
+The authoritative folder layout is defined in [`docs/implementation/02-folder-structure.md`](docs/implementation/02-folder-structure.md) — this is a summary, not a duplicate; if the two disagree, that document wins.
+
 ```
-docs/
-    implementation/
-    ui/
-    product/
-
-app/
-
-features/
-
-components/
-
-services/
-
-repositories/
-
-database/
-
-navigation/
-
-store/
-
-assets/
-
-tests/
+app/            entry point and app-level composition
+features/       self-contained feature modules
+components/     shared UI primitives
+repositories/   data-access layer between hooks/TanStack Query and services/
+services/       AuthService, ContentService, PurchaseService, NotificationService, AnalyticsService, SyncService
+database/       Expo SQLite schema, migrations, offline sync queue
+navigation/     navigators and typed routes
+store/          Zustand stores
+assets/         UI assets — not educational content
+docs/           implementation/ (this spec), archive/ (superseded drafts, non-authoritative)
+tests/          global test setup and shared helpers
 ```
 
 ---
@@ -143,18 +134,9 @@ Implementation specifications are located in:
 docs/implementation/
 ```
 
-These documents define:
+These documents define architecture, tech stack, Firebase, the Sanity content platform and schema, offline behavior, state management, purchases, performance, coding standards, and Apple Kids Category compliance — see the Document Index in [`12-build-rules.md`](docs/implementation/12-build-rules.md) for the complete, current list.
 
-- Architecture
-- Tech Stack
-- Firebase
-- Sanity CMS
-- UI Specifications
-- Coding Standards
-- Offline Engine
-- Purchases
-- Performance
-- Animation Guidelines
+Not yet written: a dedicated UI Specification and Design System document (tracked in the project roadmap). Until those exist, don't infer visual/UI detail beyond what the documents above specify.
 
 ---
 

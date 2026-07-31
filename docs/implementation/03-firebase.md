@@ -51,26 +51,18 @@ Firestore must never store educational content.
 
 ## Firebase Cloud Messaging
 
+Used for **remote, server-triggered notifications only**. Today's Discovery reminders are delivered on-device instead, with no Cloud Messaging involved — see [Notifications](#notifications) below for the full split and the reasoning.
+
 Used for:
 
-- Parent Notifications
-- Today's Discovery reminders
-- Announcement notifications (future)
+- Parent progress notifications *(future — requires [Cloud Functions](#cloud-functions))*
+- Announcement notifications *(future)*
 
 ---
 
 ## Firebase Analytics
 
-Used only for anonymous product analytics.
-
-Examples:
-
-- Category Opened
-- Deck Started
-- Deck Completed
-- Discovery Viewed
-- Sticker Earned
-- Purchase Completed
+Used only for anonymous product analytics. See [Analytics](#analytics) below for the canonical event list — it is defined once, there.
 
 Do not collect unnecessary personal information.
 
@@ -109,7 +101,7 @@ Reserved for backend logic.
 Future responsibilities include:
 
 - Purchase Verification
-- Notification Scheduling
+- Notification Scheduling *(see [Notifications](#notifications) — this is what unlocks remote parent notifications)*
 - Premium Entitlement Validation
 - Weekly Progress Summaries
 - Content Synchronization Tasks
@@ -142,29 +134,39 @@ No user should ever lose data when creating an account.
 
 ---
 
-# Firestore Collections
+# Firestore Data Model
 
-Examples:
+The hierarchy follows the real-world ownership chain: one parent account owns multiple child profiles, and per-child data nests under the child it belongs to.
 
-users/
+```
+users/{userId}
+  children/{childId}
+    progress/{discoveryId}
+    collections/{discoveryId}
+    stickers/{stickerId}
+  purchases/{purchaseId}
+  settings
+  notifications
+  sync
+```
 
-children/
+| Path | Scope | Purpose |
+|---|---|---|
+| `users/{userId}` | Account | Parent account document — auth-linked profile |
+| `users/{userId}/children/{childId}` | Child | Child profile — name, avatar, difficulty preference |
+| `.../children/{childId}/progress/{discoveryId}` | Child | Per-discovery completion state |
+| `.../children/{childId}/collections/{discoveryId}` | Child | Discoveries the child has unlocked — their card album |
+| `.../children/{childId}/stickers/{stickerId}` | Child | Stickers earned as rewards |
+| `users/{userId}/purchases/{purchaseId}` | Account | Purchase entitlements — see [Purchase Entitlements](#purchase-entitlements) |
+| `users/{userId}/settings` | Account | Account-level settings (single document) |
+| `users/{userId}/notifications` | Account | Notification preferences (single document) |
+| `users/{userId}/sync` | Account | Sync metadata (single document) |
 
-progress/
+Scoping rules this hierarchy is built to support:
 
-collections/
-
-stickers/
-
-purchases/
-
-notifications/
-
-settings/
-
-sync/
-
-analytics/
+- **Purchases, settings, notification preferences, and sync metadata are account-level, not per-child** — an expansion pack unlocks for every child profile on the account (see [`09-purchases.md`](09-purchases.md)), and notification/settings choices are made by the parent, not the child.
+- **`collections/` and `stickers/` are deliberately separate**, not duplicates: `collections/` records which discoveries a child has unlocked; `stickers/` records the distinct reward-sticker collectible earned alongside it.
+- Nesting per-child data under `children/{childId}` means Firestore Security Rules can authorize with `request.auth.uid == userId` at the top of the path and inherit down through subcollections, without needing a redundant `childId` field on every document for rule matching.
 
 Future collections should require architectural review.
 
@@ -200,7 +202,7 @@ Examples:
 - Promotional Unlocks
 - Early Access Users
 
-The application should determine unlocked content from user entitlements rather than hardcoded logic.
+The application should determine unlocked content from user entitlements rather than hardcoded logic. `PurchaseService` owns entitlement resolution — see [`01-project-architecture.md`](01-project-architecture.md#service-layer) and [`09-purchases.md`](09-purchases.md).
 
 ---
 
@@ -230,17 +232,22 @@ Server state should be managed through TanStack Query.
 
 Application state should be managed through Zustand.
 
+Repository responsibilities, the Repository/Service split, and the concrete service modules (`AuthService`, `ContentService`, `PurchaseService`, `NotificationService`, `AnalyticsService`, `SyncService`) are defined once in [`01-project-architecture.md`](01-project-architecture.md#repositories-layer) — this document assumes that layering rather than repeating it.
+
 ---
 
 # Error Handling
 
-Every Firebase operation must:
+This is the canonical error-handling checklist for the project. [`11-coding-standards.md`](11-coding-standards.md) references this section rather than restating it.
 
-- Handle loading states
-- Handle retry
-- Handle offline mode
-- Display friendly errors
-- Never crash the application
+Every Firebase operation must handle:
+
+1. Loading state
+2. Failure state
+3. Retry
+4. Offline mode
+5. Friendly, age-appropriate error UI
+6. Never crash the application
 
 Offline-first behavior is mandatory.
 
@@ -260,33 +267,37 @@ Synchronization includes:
 
 The application should continue functioning while offline.
 
-Pending changes should synchronize automatically when connectivity returns.
+Pending changes should synchronize automatically when connectivity returns. The offline write queue that makes this possible is owned by `SyncService` and specified in [`08-offline-engine.md`](08-offline-engine.md#offline-sync-queue).
 
 ---
 
-# Cloud Messaging
+# Notifications
 
-Notification types:
+Notification delivery is split by whether it needs a backend trigger. This is a deliberate split, not an oversight: sending a Firebase Cloud Messaging push requires a server-side sender (Cloud Functions), which is future scope — so any notification needed for the MVP must not depend on it.
 
-## Child
+## Local Scheduled Notifications (Child) — MVP
 
-- Today's Discovery
+Delivered entirely on-device. No backend, no Cloud Messaging, no Cloud Functions involved:
+
+- Today's Discovery reminder
 - Gentle reminders
 
-Maximum frequency:
+Maximum frequency: one notification every two days.
 
-One notification every two days.
+This uses the same on-device notification tooling already required to *receive* Cloud Messaging pushes (see `00-tech-stack.md`) — scheduling a local notification is not a new dependency. Owned by `NotificationService` (see [`01-project-architecture.md`](01-project-architecture.md#service-layer)).
 
 ---
 
-## Parent
+## Remote Notifications via Cloud Messaging (Parent) — Future
+
+Deferred until [Cloud Functions](#cloud-functions) exists, since the client cannot trigger an FCM send on its own:
 
 - Weekly learning summary
 - Deck completed
 - Sticker milestones
 - Major achievements
 
-All notifications must be configurable.
+All notifications — local and remote — must be configurable by the parent.
 
 ---
 
@@ -306,18 +317,23 @@ All Firebase access must be authenticated.
 
 # Analytics
 
-Track only meaningful events.
+This is the canonical list of tracked analytics events for the whole project. [`01-project-architecture.md`](01-project-architecture.md) and [`09-purchases.md`](09-purchases.md) reference this table rather than restating it — add or rename an event here only.
 
-Examples:
+Track only meaningful events:
 
-- App Open
-- Category Viewed
-- Deck Started
-- Deck Completed
-- Discovery Completed
-- Sticker Earned
-- Purchase Completed
+| Event | Fires when |
+|---|---|
+| `App Open` | The application launches |
+| `Category Viewed` | A child opens a category |
+| `Deck Started` | A child opens a deck (its first discovery) |
+| `Deck Completed` | A child finishes every discovery in a deck |
+| `Discovery Viewed` | A child opens a discovery card |
+| `Discovery Completed` | A child finishes a discovery (reward granted) |
+| `Sticker Earned` | A sticker is awarded |
+| `Expansion Purchased` | A purchase completes — base app, discovery pack, or category expansion (see [`09-purchases.md`](09-purchases.md)) |
 
-Analytics should prioritize product improvement while respecting children's privacy.
+`Discovery Viewed` / `Discovery Completed` and `Deck Started` / `Deck Completed` are intentionally distinct event pairs — viewing does not imply completion.
+
+Analytics should prioritize product improvement while respecting children's privacy. Do not collect unnecessary personal information.
 
 ---

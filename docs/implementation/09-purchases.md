@@ -31,7 +31,7 @@ Launch pricing is controlled by **feature flags**.
 ## State
 
 - Purchase state lives in Zustand (`07-state-management.md`).
-- Purchase **synchronization** goes through TanStack Query.
+- Purchase **synchronization** goes through TanStack Query, via `PurchaseService` (`01-project-architecture.md#service-layer`).
 - Entitlements are cached in SQLite so purchased content remains accessible offline.
 
 ---
@@ -44,7 +44,7 @@ Purchases are recorded in Firestore under user-specific data. Firestore is a rec
 
 ## Analytics
 
-Track `Expansion Purchased`. Do not track anything that identifies the child.
+Track `Expansion Purchased` — the canonical event definition lives in `03-firebase.md#analytics`. Do not track anything that identifies the child.
 
 ---
 

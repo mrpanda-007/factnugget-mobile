@@ -48,6 +48,7 @@ Rules:
 - Query keys are typed and centralized per feature.
 - Loading, error, and retry states are handled at the query boundary — see `03-firebase.md`.
 - The cache is the single source of truth for server data; components read from it, not from a mirrored store.
+- A `queryFn`/`mutationFn` calls a Repository method, never the Firebase SDK directly — see `01-project-architecture.md#repositories-layer`.
 
 ---
 

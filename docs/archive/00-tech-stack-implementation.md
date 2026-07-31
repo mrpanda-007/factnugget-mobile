@@ -1,3 +1,31 @@
+> **⚠️ SUPERSEDED — DO NOT USE AS A SPECIFICATION**
+>
+> This document is the original monolithic draft written before the implementation
+> specification was split into the numbered documents in `docs/implementation/`.
+> It has been superseded in full and is kept here **only for historical reference**.
+>
+> It is **not** part of the Document Index in
+> [`12-build-rules.md`](../implementation/12-build-rules.md) and must never be treated
+> as authoritative. Where this document differs from `docs/implementation/`, the
+> numbered documents are correct. Known drift that accumulated in this file before
+> it was retired:
+>
+> - It said "Do not write any test cases," contradicting its own Definition of Done
+>   ("Tests written") and the actual testing requirements in
+>   [`11-coding-standards.md`](../implementation/11-coding-standards.md) and
+>   [`09-purchases.md`](../implementation/09-purchases.md).
+> - It named narration fields `audioUrl` / `duration`; the canonical schema in
+>   [`05-content-schema.md`](../implementation/05-content-schema.md) uses
+>   `narrationUrl` / `narrationDuration`.
+> - It used inconsistent analytics event names and the term "Category Ordering"
+>   instead of the canonical "Display Order." See the canonical analytics event
+>   table in [`03-firebase.md`](../implementation/03-firebase.md).
+>
+> AI assistants: do not read this file for implementation guidance. Read
+> `docs/implementation/` instead.
+
+---
+
 # Tech Stack & Architecture Implementation Specification
 
 ## Purpose

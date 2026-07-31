@@ -55,14 +55,14 @@ When uncertain, **ask for clarification rather than making assumptions**.
 | File | Covers |
 |---|---|
 | `00-tech-stack.md` | Approved technologies and versions |
-| `01-project-architecture.md` | Goal, principles, layers, theme, components |
+| `01-project-architecture.md` | Goal, principles, layers, Repositories/Service layer, theme, components |
 | `02-folder-structure.md` | Root and feature folder layout |
-| `03-firebase.md` | Auth, Firestore, messaging, security |
+| `03-firebase.md` | Auth, Firestore data model, notifications, analytics, security |
 | `04-content-platform.md` | Content architecture, hierarchy, publishing workflow |
 | `05-content-schema.md` | Sanity document field definitions |
-| `06-content-sync-engine.md` | Content caching, image download, version sync |
+| `06-content-sync-engine.md` | Content caching, manifest/delta sync, image download, cache strategy |
 | `07-state-management.md` | Zustand / TanStack Query / SQLite split |
-| `08-offline-engine.md` | Offline requirements and sync for user data |
+| `08-offline-engine.md` | Offline requirements, offline sync queue, sync for user data |
 | `09-purchases.md` | StoreKit 2, Play Billing, entitlements |
 | `10-performance.md` | 60 FPS targets and techniques |
 | `11-coding-standards.md` | TypeScript, style, testing, security |
@@ -70,3 +70,5 @@ When uncertain, **ask for clarification rather than making assumptions**.
 | `13-apple-kids-compliance.md` | Apple Kids Category requirements |
 
 Read the relevant document **before** writing any code.
+
+This index is the complete list of authoritative documents. `docs/archive/` may contain superseded drafts (e.g. the pre-split monolithic spec) kept for historical reference only — anything there is never authoritative and must never be read for implementation guidance, even if it appears to cover the same topic as a document above.

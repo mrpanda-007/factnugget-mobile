@@ -45,7 +45,7 @@ Implementation notes:
 
 - A parental gate is an adult-level task (e.g., solve a math problem, answer a question) — see Apple's reference examples.
 - For pre-literate children, add a voiceover prompt so the child understands a parent needs to be involved.
-- Build this as a shared component (`components/ParentalGate` or similar) — do not duplicate the gate UI per feature, per `11-coding-standards.md`.
+- Build this as the shared `ParentalGate` component — it is part of the canonical baseline component set in `01-project-architecture.md#components`. Do not duplicate the gate UI per feature.
 
 ---
 
@@ -54,7 +54,7 @@ Implementation notes:
 - **Ask to Buy**: children can request a purchase; a parent approves or denies from their own device. StoreKit 2 supports this natively — no custom build needed, but the purchase flow and its tests must account for a pending/awaiting-approval state.
 - **`ageRatingCode`**: where required by law, monitor for age-rating changes on the user's device via StoreKit.
 - **Significant Change API / consent**: if the app's age rating or a feature changes in a way that counts as a "significant change," trigger a re-consent flow via the Significant Change API before the child can continue.
-- **App Store Server Notifications**: handle the consent-withdrawn notification type — when a parent withdraws consent, the app must stop launching for that child's account. This needs a corresponding state in the auth/entitlement layer (see `03-firebase.md`).
+- **App Store Server Notifications**: handle the consent-withdrawn notification type — when a parent withdraws consent, the app must stop launching for that child's account. This needs a corresponding state in `AuthService` (see `01-project-architecture.md#service-layer` and `03-firebase.md`).
 
 ---
 
@@ -80,6 +80,6 @@ Per the "avoid overengineering" principle in `01-project-architecture.md`, the f
 | Requirement | Also see |
 |---|---|
 | PII/device data restrictions | `03-firebase.md` |
-| Parental gate component | `11-coding-standards.md` (component reuse) |
+| Parental gate component | `01-project-architecture.md#components` |
 | Ask to Buy, consent withdrawal | `09-purchases.md` |
 | Age-appropriate content by band | `04-content-platform.md` |

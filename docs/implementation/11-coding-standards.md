@@ -20,7 +20,7 @@
 - Prefer composition over inheritance.
 - Keep files under approximately **300 lines** where practical.
 - Separate UI from business logic.
-- Separate business logic from Firebase.
+- Separate business logic from Firebase and Sanity via the Repository/Service layers (see `01-project-architecture.md#repositories-layer`).
 - Prefer pure functions.
 - Document public utilities.
 - Prefer readability over cleverness.
@@ -30,9 +30,7 @@
 
 ## Components
 
-Reusable components only:
-
-`Button`, `Card`, `ProgressBar`, `DiscoveryCard`, `Sticker`, `Avatar`, `CategoryCard`, `Badge`, `SectionHeader`
+Reusable components only. The canonical baseline set is defined once in [`01-project-architecture.md#components`](01-project-architecture.md#components) — this document doesn't restate it.
 
 **Never duplicate UI.** Extend an existing component before creating a new one.
 
@@ -49,13 +47,7 @@ Reusable components only:
 
 ## Error Handling
 
-Every Firebase request must handle:
-
-1. Loading
-2. Failure
-3. Retry
-4. Friendly UI
-5. Never crash
+Every Firebase request must handle the canonical checklist defined in [`03-firebase.md#error-handling`](03-firebase.md#error-handling) (loading, failure, retry, offline mode, friendly UI, never crash) — this document doesn't restate it.
 
 ---
 

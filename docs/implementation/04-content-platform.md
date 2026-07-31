@@ -161,51 +161,17 @@ Publishing educational content must never require an application release.
 
 ## Content Synchronization (Overview)
 
-Synchronization happens automatically in the background. Typical flow:
+Synchronization happens automatically in the background: the app displays cached content immediately, checks Sanity for changes, and downloads only what changed. The user should never wait for content synchronization before using the application.
 
-```
-Application Launch
-    ↓
-Read Local SQLite
-    ↓
-Display Cached Content
-    ↓
-Check Sanity
-    ↓
-Compare Versions
-    ↓
-Download Changes
-    ↓
-Update SQLite
-    ↓
-Refresh UI
-```
-
-The user should never wait for content synchronization before using the application.
-
-The detailed sync engine — version comparison, image download strategy, and cache invalidation — is defined in [`06-content-sync-engine.md`](06-content-sync-engine.md).
+The full sync flow, manifest/delta strategy, version comparison, image download strategy, and cache invalidation are defined once in [`06-content-sync-engine.md`](06-content-sync-engine.md) — this document intentionally doesn't repeat the diagram, to avoid the two drifting apart.
 
 ---
 
 ## Expansion Packs
 
-Expansion Packs are delivered entirely through the Content Platform.
+Expansion Packs are delivered entirely through the Content Platform: a confirmed Firebase entitlement triggers the Content Service to fetch and cache the pack's metadata and images, then unlock it inside the application.
 
-```
-Purchase
-    ↓
-Firebase confirms entitlement
-    ↓
-Content Service requests expansion metadata
-    ↓
-Download content + images
-    ↓
-Store locally
-    ↓
-Unlock inside application
-```
-
-Expansion packs should never require an application update. Entitlement handling is defined in [`09-purchases.md`](09-purchases.md); download and caching mechanics are defined in [`06-content-sync-engine.md`](06-content-sync-engine.md).
+Expansion packs should never require an application update. Entitlement handling is defined in [`09-purchases.md`](09-purchases.md); the full delivery sequence and caching mechanics are defined once in [`06-content-sync-engine.md#expansion-pack-delivery`](06-content-sync-engine.md#expansion-pack-delivery).
 
 ---
 
@@ -218,16 +184,16 @@ Instead, all content must flow through the Content Service.
 ```
 UI
     ↓
-Repositories
+ContentRepository
     ↓
-Content Service
+ContentService
     ↓
 SQLite Cache
     ↓
 Sanity CDN
 ```
 
-The Content Service is responsible for:
+`ContentRepository` and `ContentService` are defined in [`01-project-architecture.md`](01-project-architecture.md#repositories-layer). The Content Service is responsible for:
 
 - Fetching Categories
 - Fetching Decks
