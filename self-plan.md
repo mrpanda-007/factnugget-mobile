@@ -35,14 +35,12 @@ When implementing code, designing architecture, or making technical decisions, a
 [x] Decide tech stack
 [x] Create GitHub repository
 [x] Create development branch strategy
-[ ] Create project folder structure
-[ ] Configure Claude Code
-[ ] Configure Cursor (optional)
-[ ] Configure VS Code
-[ ] Setup linting
-[ ] Setup formatting
+[x] Create project folder structure
+[x] Configure Claude Code
+[x] Setup linting
+[x] Setup formatting
 [ ] Setup CI pipeline
-[ ] Create README
+[x] Create README
 
 Deliverables:
 □ Repository
