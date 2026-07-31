@@ -55,8 +55,8 @@ Used for **remote, server-triggered notifications only**. Today's Discovery remi
 
 Used for:
 
-- Parent progress notifications *(future — requires [Cloud Functions](#cloud-functions))*
-- Announcement notifications *(future)*
+- Parent progress notifications _(future — requires [Cloud Functions](#cloud-functions))_
+- Announcement notifications _(future)_
 
 ---
 
@@ -101,7 +101,7 @@ Reserved for backend logic.
 Future responsibilities include:
 
 - Purchase Verification
-- Notification Scheduling *(see [Notifications](#notifications) — this is what unlocks remote parent notifications)*
+- Notification Scheduling _(see [Notifications](#notifications) — this is what unlocks remote parent notifications)_
 - Premium Entitlement Validation
 - Weekly Progress Summaries
 - Content Synchronization Tasks
@@ -150,17 +150,17 @@ users/{userId}
   sync
 ```
 
-| Path | Scope | Purpose |
-|---|---|---|
-| `users/{userId}` | Account | Parent account document — auth-linked profile |
-| `users/{userId}/children/{childId}` | Child | Child profile — name, avatar, difficulty preference |
-| `.../children/{childId}/progress/{discoveryId}` | Child | Per-discovery completion state |
-| `.../children/{childId}/collections/{discoveryId}` | Child | Discoveries the child has unlocked — their card album |
-| `.../children/{childId}/stickers/{stickerId}` | Child | Stickers earned as rewards |
-| `users/{userId}/purchases/{purchaseId}` | Account | Purchase entitlements — see [Purchase Entitlements](#purchase-entitlements) |
-| `users/{userId}/settings` | Account | Account-level settings (single document) |
-| `users/{userId}/notifications` | Account | Notification preferences (single document) |
-| `users/{userId}/sync` | Account | Sync metadata (single document) |
+| Path                                               | Scope   | Purpose                                                                     |
+| -------------------------------------------------- | ------- | --------------------------------------------------------------------------- |
+| `users/{userId}`                                   | Account | Parent account document — auth-linked profile                               |
+| `users/{userId}/children/{childId}`                | Child   | Child profile — name, avatar, difficulty preference                         |
+| `.../children/{childId}/progress/{discoveryId}`    | Child   | Per-discovery completion state                                              |
+| `.../children/{childId}/collections/{discoveryId}` | Child   | Discoveries the child has unlocked — their card album                       |
+| `.../children/{childId}/stickers/{stickerId}`      | Child   | Stickers earned as rewards                                                  |
+| `users/{userId}/purchases/{purchaseId}`            | Account | Purchase entitlements — see [Purchase Entitlements](#purchase-entitlements) |
+| `users/{userId}/settings`                          | Account | Account-level settings (single document)                                    |
+| `users/{userId}/notifications`                     | Account | Notification preferences (single document)                                  |
+| `users/{userId}/sync`                              | Account | Sync metadata (single document)                                             |
 
 Scoping rules this hierarchy is built to support:
 
@@ -284,7 +284,7 @@ Delivered entirely on-device. No backend, no Cloud Messaging, no Cloud Functions
 
 Maximum frequency: one notification every two days.
 
-This uses the same on-device notification tooling already required to *receive* Cloud Messaging pushes (see `00-tech-stack.md`) — scheduling a local notification is not a new dependency. Owned by `NotificationService` (see [`01-project-architecture.md`](01-project-architecture.md#service-layer)).
+This uses the same on-device notification tooling already required to _receive_ Cloud Messaging pushes (see `00-tech-stack.md`) — scheduling a local notification is not a new dependency. Owned by `NotificationService` (see [`01-project-architecture.md`](01-project-architecture.md#service-layer)).
 
 ---
 
@@ -321,15 +321,15 @@ This is the canonical list of tracked analytics events for the whole project. [`
 
 Track only meaningful events:
 
-| Event | Fires when |
-|---|---|
-| `App Open` | The application launches |
-| `Category Viewed` | A child opens a category |
-| `Deck Started` | A child opens a deck (its first discovery) |
-| `Deck Completed` | A child finishes every discovery in a deck |
-| `Discovery Viewed` | A child opens a discovery card |
-| `Discovery Completed` | A child finishes a discovery (reward granted) |
-| `Sticker Earned` | A sticker is awarded |
+| Event                 | Fires when                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `App Open`            | The application launches                                                                                          |
+| `Category Viewed`     | A child opens a category                                                                                          |
+| `Deck Started`        | A child opens a deck (its first discovery)                                                                        |
+| `Deck Completed`      | A child finishes every discovery in a deck                                                                        |
+| `Discovery Viewed`    | A child opens a discovery card                                                                                    |
+| `Discovery Completed` | A child finishes a discovery (reward granted)                                                                     |
+| `Sticker Earned`      | A sticker is awarded                                                                                              |
 | `Expansion Purchased` | A purchase completes — base app, discovery pack, or category expansion (see [`09-purchases.md`](09-purchases.md)) |
 
 `Discovery Viewed` / `Discovery Completed` and `Deck Started` / `Deck Completed` are intentionally distinct event pairs — viewing does not imply completion.

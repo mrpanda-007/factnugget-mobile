@@ -88,11 +88,11 @@ However, the schema must fully support future narration.
 
 Every discovery should include optional fields:
 
-| Field | Type |
-|---|---|
-| `narrationUrl` | `string \| null` |
+| Field               | Type             |
+| ------------------- | ---------------- |
+| `narrationUrl`      | `string \| null` |
 | `narrationDuration` | `number \| null` |
-| `transcript` | `string \| null` |
+| `transcript`        | `string \| null` |
 
 These fields remain nullable until narration is introduced.
 

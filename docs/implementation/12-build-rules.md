@@ -52,22 +52,22 @@ When uncertain, **ask for clarification rather than making assumptions**.
 
 ## Document Index
 
-| File | Covers |
-|---|---|
-| `00-tech-stack.md` | Approved technologies and versions |
-| `01-project-architecture.md` | Goal, principles, layers, Repositories/Service layer, theme, components |
-| `02-folder-structure.md` | Root and feature folder layout |
-| `03-firebase.md` | Auth, Firestore data model, notifications, analytics, security |
-| `04-content-platform.md` | Content architecture, hierarchy, publishing workflow |
-| `05-content-schema.md` | Sanity document field definitions |
-| `06-content-sync-engine.md` | Content caching, manifest/delta sync, image download, cache strategy |
-| `07-state-management.md` | Zustand / TanStack Query / SQLite split |
-| `08-offline-engine.md` | Offline requirements, offline sync queue, sync for user data |
-| `09-purchases.md` | StoreKit 2, Play Billing, entitlements |
-| `10-performance.md` | 60 FPS targets and techniques |
-| `11-coding-standards.md` | TypeScript, style, testing, security |
-| `12-build-rules.md` | Process, Definition of Done, AI rules |
-| `13-apple-kids-compliance.md` | Apple Kids Category requirements |
+| File                          | Covers                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `00-tech-stack.md`            | Approved technologies and versions                                      |
+| `01-project-architecture.md`  | Goal, principles, layers, Repositories/Service layer, theme, components |
+| `02-folder-structure.md`      | Root and feature folder layout                                          |
+| `03-firebase.md`              | Auth, Firestore data model, notifications, analytics, security          |
+| `04-content-platform.md`      | Content architecture, hierarchy, publishing workflow                    |
+| `05-content-schema.md`        | Sanity document field definitions                                       |
+| `06-content-sync-engine.md`   | Content caching, manifest/delta sync, image download, cache strategy    |
+| `07-state-management.md`      | Zustand / TanStack Query / SQLite split                                 |
+| `08-offline-engine.md`        | Offline requirements, offline sync queue, sync for user data            |
+| `09-purchases.md`             | StoreKit 2, Play Billing, entitlements                                  |
+| `10-performance.md`           | 60 FPS targets and techniques                                           |
+| `11-coding-standards.md`      | TypeScript, style, testing, security                                    |
+| `12-build-rules.md`           | Process, Definition of Done, AI rules                                   |
+| `13-apple-kids-compliance.md` | Apple Kids Category requirements                                        |
 
 Read the relevant document **before** writing any code.
 

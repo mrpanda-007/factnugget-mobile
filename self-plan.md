@@ -5,18 +5,31 @@ This document is a personal project management roadmap and progress tracker for 
 Do not use this document to make implementation decisions or infer technical requirements. It exists solely to track development progress, milestones, and completed work.
 
 When implementing code, designing architecture, or making technical decisions, always follow the dedicated documents in the docs/implementation/ directory (such as the architecture, tech stack, Firebase, Sanity, UI, and coding standards documents). If this roadmap conflicts with those specifications, the implementation documents always take precedence.
+
 # ==============================================================================
+
 # Kids Discovery App - Master Development Roadmap
+
 # ==============================================================================
+
 #
+
 # Status:
+
 # [ ] Not Started
+
 # [x] In Progress
+
 # [ ] Review
+
 # [ ] Complete
+
 #
+
 # ==============================================================================
+
 # PHASE 0 — PROJECT SETUP
+
 # ==============================================================================
 
 [x] Decide tech stack

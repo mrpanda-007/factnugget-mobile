@@ -77,9 +77,9 @@ Per the "avoid overengineering" principle in `01-project-architecture.md`, the f
 
 ## Cross-References
 
-| Requirement | Also see |
-|---|---|
-| PII/device data restrictions | `03-firebase.md` |
-| Parental gate component | `01-project-architecture.md#components` |
-| Ask to Buy, consent withdrawal | `09-purchases.md` |
-| Age-appropriate content by band | `04-content-platform.md` |
+| Requirement                     | Also see                                |
+| ------------------------------- | --------------------------------------- |
+| PII/device data restrictions    | `03-firebase.md`                        |
+| Parental gate component         | `01-project-architecture.md#components` |
+| Ask to Buy, consent withdrawal  | `09-purchases.md`                       |
+| Age-appropriate content by band | `04-content-platform.md`                |

@@ -280,7 +280,6 @@ This includes:
 
 Sanity must **not** store user-specific information such as progress, purchases, child profiles, or settings.
 
-
 ---
 
 # Images

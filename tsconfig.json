@@ -1,0 +1,26 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@app/*": ["./app/*"],
+      "@assets/*": ["./assets/*"],
+      "@components/*": ["./components/*"],
+      "@features/*": ["./features/*"],
+      "@hooks/*": ["./hooks/*"],
+      "@navigation/*": ["./navigation/*"],
+      "@providers/*": ["./providers/*"],
+      "@repositories/*": ["./repositories/*"],
+      "@services/*": ["./services/*"],
+      "@store/*": ["./store/*"],
+      "@database/*": ["./database/*"],
+      "@types/*": ["./types/*"],
+      "@constants/*": ["./constants/*"],
+      "@utils/*": ["./utils/*"],
+      "@animations/*": ["./animations/*"],
+      "@firebase-config/*": ["./firebase/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
+  "exclude": ["node_modules"]
+}

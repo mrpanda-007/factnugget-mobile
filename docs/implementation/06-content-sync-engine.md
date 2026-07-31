@@ -113,7 +113,7 @@ A download that fails or is interrupted must leave the previously cached version
 
 ## Cache Strategy
 
-Version checking above keeps the cache *correct*; this section governs its *size*.
+Version checking above keeps the cache _correct_; this section governs its _size_.
 
 - **No fixed cache quota for MVP.** The initial catalog (100 Discoveries across 5 categories) is small enough that eviction machinery isn't needed yet. This must be revisited before the catalog grows toward the "thousands of Discoveries" goal in [`04-content-platform.md#content-rules`](04-content-platform.md#content-rules) — at that scale a quota and eviction policy become mandatory.
 - **Eviction policy, once a quota exists:** evict least-recently-viewed images for content the child does not own and hasn't opened recently. Never silently evict content the user has purchased.

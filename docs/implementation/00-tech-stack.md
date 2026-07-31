@@ -7,11 +7,11 @@
 
 ## Platform
 
-| Concern | Choice |
-|---|---|
-| Framework | React Native |
-| Tooling / runtime | Expo |
-| Language | TypeScript (strict) |
+| Concern           | Choice              |
+| ----------------- | ------------------- |
+| Framework         | React Native        |
+| Tooling / runtime | Expo                |
+| Language          | TypeScript (strict) |
 
 Always use the **latest stable** versions.
 
@@ -57,11 +57,11 @@ Rules:
 
 ## State
 
-| Layer | Library |
-|---|---|
-| Client state | Zustand |
-| Server state | TanStack Query |
-| Local persistence | Expo SQLite |
+| Layer             | Library        |
+| ----------------- | -------------- |
+| Client state      | Zustand        |
+| Server state      | TanStack Query |
+| Local persistence | Expo SQLite    |
 
 Redux is not used. See `07-state-management.md`.
 
@@ -76,8 +76,8 @@ Redux is not used. See `07-state-management.md`.
 - Cloud Messaging
 - Analytics
 - Crashlytics
-- Storage *(future)*
-- Cloud Functions *(future)*
+- Storage _(future)_
+- Cloud Functions _(future)_
 
 See `03-firebase.md`.
 
@@ -85,10 +85,10 @@ See `03-firebase.md`.
 
 ## Purchases
 
-| Platform | Technology |
-|---|---|
-| iOS | StoreKit 2 |
-| Android | Google Play Billing |
+| Platform | Technology          |
+| -------- | ------------------- |
+| iOS      | StoreKit 2          |
+| Android  | Google Play Billing |
 
 See `09-purchases.md`.
 

@@ -69,7 +69,7 @@ Rules:
 
 ## Repositories Layer
 
-Repositories are the single data-access API that hooks and TanStack Query call into. They exist to keep UI and business logic ignorant of *which* backend (Firebase, Sanity, StoreKit) or *which* cache (SQLite) is actually serving a piece of data.
+Repositories are the single data-access API that hooks and TanStack Query call into. They exist to keep UI and business logic ignorant of _which_ backend (Firebase, Sanity, StoreKit) or _which_ cache (SQLite) is actually serving a piece of data.
 
 Responsibilities:
 
@@ -90,14 +90,14 @@ Folder location: repositories are cross-cutting by default, since most domain co
 
 Services are the only modules permitted to call a platform SDK directly (Firebase, Sanity, StoreKit 2 / Play Billing, the filesystem). Each is a singleton module under `services/`.
 
-| Service | Responsibility |
-|---|---|
-| `AuthService` | Firebase Authentication — anonymous sessions, email/Google/Apple sign-in, account linking. See `03-firebase.md`. |
-| `ContentService` | Sanity CDN access, content synchronization, and the SQLite content cache. See `04-content-platform.md` and `06-content-sync-engine.md`. |
-| `PurchaseService` | StoreKit 2 / Google Play Billing, entitlement resolution, Firestore purchase records. See `09-purchases.md`. |
-| `NotificationService` | Local scheduled notifications (MVP) and Firebase Cloud Messaging (future). See `03-firebase.md#notifications`. |
-| `AnalyticsService` | Firebase Analytics and Crashlytics event tracking, against the canonical event list in `03-firebase.md#analytics`. |
-| `SyncService` | The offline write queue for user data (progress, collections, settings) synced to Firestore. See `08-offline-engine.md#offline-sync-queue`. |
+| Service               | Responsibility                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthService`         | Firebase Authentication — anonymous sessions, email/Google/Apple sign-in, account linking. See `03-firebase.md`.                            |
+| `ContentService`      | Sanity CDN access, content synchronization, and the SQLite content cache. See `04-content-platform.md` and `06-content-sync-engine.md`.     |
+| `PurchaseService`     | StoreKit 2 / Google Play Billing, entitlement resolution, Firestore purchase records. See `09-purchases.md`.                                |
+| `NotificationService` | Local scheduled notifications (MVP) and Firebase Cloud Messaging (future). See `03-firebase.md#notifications`.                              |
+| `AnalyticsService`    | Firebase Analytics and Crashlytics event tracking, against the canonical event list in `03-firebase.md#analytics`.                          |
+| `SyncService`         | The offline write queue for user data (progress, collections, settings) synced to Firestore. See `08-offline-engine.md#offline-sync-queue`. |
 
 Rule: a Repository may call any Service; a Service never calls another Service's platform SDK on its behalf — if two Services need the same data, that composition happens in a Repository.
 
@@ -105,13 +105,13 @@ Rule: a Repository may call any Service; a Service never calls another Service's
 
 ## Data Ownership
 
-| Data | Home | Notes |
-|---|---|---|
-| Educational content | Sanity CMS | Never in Firestore — see `04-content-platform.md` |
-| Images | Sanity CDN | Downloaded and cached locally by the app, never bundled |
-| User, children, progress, collections, purchases, settings | Firestore | User-specific only |
-| Offline cache of all of the above | Expo SQLite | Source of truth while offline |
-| Theme, child selection, active deck, UI state | Zustand | Ephemeral client state |
+| Data                                                       | Home        | Notes                                                   |
+| ---------------------------------------------------------- | ----------- | ------------------------------------------------------- |
+| Educational content                                        | Sanity CMS  | Never in Firestore — see `04-content-platform.md`       |
+| Images                                                     | Sanity CDN  | Downloaded and cached locally by the app, never bundled |
+| User, children, progress, collections, purchases, settings | Firestore   | User-specific only                                      |
+| Offline cache of all of the above                          | Expo SQLite | Source of truth while offline                           |
+| Theme, child selection, active deck, UI state              | Zustand     | Ephemeral client state                                  |
 
 ---
 

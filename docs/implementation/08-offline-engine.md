@@ -61,14 +61,14 @@ This is what "writes are queued locally and replayed on reconnect" (above) actua
 
 **Queue model:** a single append-only SQLite table in `database/`, alongside the rest of the schema (see [`02-folder-structure.md`](02-folder-structure.md)) — one row per pending write:
 
-| Field | Purpose |
-|---|---|
-| `id` | Local queue entry id |
-| `path` | Target Firestore path — see [`03-firebase.md#firestore-data-model`](03-firebase.md#firestore-data-model) |
-| `operation` | `set` \| `update` |
-| `payload` | The write payload |
-| `createdAt` | Ordering and conflict resolution |
-| `retryCount` | Backoff |
+| Field        | Purpose                                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------------------------- |
+| `id`         | Local queue entry id                                                                                     |
+| `path`       | Target Firestore path — see [`03-firebase.md#firestore-data-model`](03-firebase.md#firestore-data-model) |
+| `operation`  | `set` \| `update`                                                                                        |
+| `payload`    | The write payload                                                                                        |
+| `createdAt`  | Ordering and conflict resolution                                                                         |
+| `retryCount` | Backoff                                                                                                  |
 
 This is a flat queue, not a general event log — a single child's data on a single device doesn't need operational-transform or CRDT-level machinery, and adding it now would be overengineering.
 

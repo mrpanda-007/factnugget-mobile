@@ -8,10 +8,10 @@
 
 Use **native platform purchases** only.
 
-| Platform | Technology |
-|---|---|
-| iOS | StoreKit 2 |
-| Android | Google Play Billing |
+| Platform | Technology          |
+| -------- | ------------------- |
+| iOS      | StoreKit 2          |
+| Android  | Google Play Billing |
 
 No third-party purchase abstraction layers.
 

@@ -6,11 +6,11 @@
 
 ## Three Layers
 
-| Layer | Tool | Owns |
-|---|---|---|
-| Client state | Zustand | Ephemeral UI and session state |
-| Server state | TanStack Query | Anything fetched from Firebase |
-| Persistence | Expo SQLite | Offline cache and durable local data |
+| Layer        | Tool           | Owns                                 |
+| ------------ | -------------- | ------------------------------------ |
+| Client state | Zustand        | Ephemeral UI and session state       |
+| Server state | TanStack Query | Anything fetched from Firebase       |
+| Persistence  | Expo SQLite    | Offline cache and durable local data |
 
 Keep these strictly separated.
 
