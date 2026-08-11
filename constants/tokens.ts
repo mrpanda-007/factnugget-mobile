@@ -135,6 +135,43 @@ export const worldThemes: Record<WorldId, WorldTheme> = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Ollie's Discovery Island — first-app-open scene palette
+// ---------------------------------------------------------------------------
+
+/**
+ * The muted storybook palette for the first-open scene
+ * (features/onboarding — "wide establishing shot, cinematic push-in").
+ *
+ * Deliberately NOT mirrored into `tailwind.config.js`, unlike `colors` above:
+ * every value here is consumed as a react-native-svg `fill`/`stroke` or a plain
+ * style object, never as a className, so mirroring would add sync burden for no
+ * consumer. `ink` re-uses ink900 so the scene's line work matches app-wide text.
+ */
+export const islandScene = {
+  /** Far sky, top of frame — soft powder blue. */
+  sky: '#B9D9EC',
+  /** Sky at the mid band, where the title sits. */
+  skyMid: '#DCEBF3',
+  /** Very pale blue just above the horizon haze. */
+  skyLight: '#EFF6FA',
+  /** Warm off-white parchment the sky dissolves into at the horizon. */
+  paper: colors.cream,
+  cloud: '#FFFDF7',
+  grass: '#A9CE9F',
+  grassDark: '#6E9B70',
+  grassDeep: '#4F7757',
+  sand: '#E9D8B8',
+  sandDark: '#C9B08A',
+  ollieAccent: '#F4B183',
+  ollieAccentDark: '#DC9260',
+  ollieBelly: '#FDE7CF',
+  ollieCheek: colors.coral300,
+  /** Deep warm charcoal — the scene's only "line" color. Never pure black. */
+  ink: colors.ink900,
+  inkSoft: colors.ink600,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Spacing / radius / elevation / touch targets
 // ---------------------------------------------------------------------------
 
