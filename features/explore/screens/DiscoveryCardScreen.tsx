@@ -70,6 +70,8 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     <DiscoveryCard
       key={currentDiscovery.id}
       discovery={currentDiscovery}
+      position={index + 1}
+      total={discoveries.length}
       onNext={handleNext}
       onPrevious={handlePrevious}
     />

@@ -1,24 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 
-import { Button } from '@components/Button';
-import { RewardAnimation } from '@components/RewardAnimation';
-import { WorldBackground } from '@components/WorldBackground';
-import { worldThemes } from '@constants/tokens';
+import { JourneyCompletionScene } from '@components/JourneyCompletionScene';
+import { useWorldSummaries } from '@features/explore/hooks/useWorldSummaries';
 import * as ContentRepository from '@repositories/ContentRepository';
 import type { Deck } from '@app-types/Deck';
 import type { ExploreScreenProps } from '@navigation/types';
 
 /**
- * The celebration — docs/design/01-screen-map.md "Completion". Never
- * autoplay, never forced continuation: the child gets one explicit choice
- * once the reward sequence settles (docs/product/02-user-flows.md Step 8).
+ * The journey-completion route is a cinematic presentation of state that has
+ * already been persisted by DiscoveryCardScreen. It does not write progress or
+ * award anything a second time when the scene re-renders.
  */
 export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Completion'>) {
   const { deckId } = route.params;
   const [deck, setDeck] = useState<Deck | null>(null);
-  const [showChoices, setShowChoices] = useState(false);
+  const { summaries, isLoading: summariesLoading } = useWorldSummaries();
 
   useEffect(() => {
     let cancelled = false;
@@ -30,37 +27,32 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
     };
   }, [deckId]);
 
-  if (!deck) {
-    return <View className="flex-1 bg-cream" />;
-  }
+  const completedWorldIds = useMemo(
+    () =>
+      summaries.filter((summary) => summary.progress === 1).map((summary) => summary.category.id),
+    [summaries],
+  );
+  const nextWorlds = useMemo(
+    () =>
+      deck
+        ? summaries.filter(
+            (summary) =>
+              !summary.locked && summary.category.id !== deck.category && summary.progress !== 1,
+          )
+        : [],
+    [deck, summaries],
+  );
 
-  const theme = worldThemes[deck.category];
+  // The reveal starts only once all real data it references has resolved.
+  if (!deck || summariesLoading) return <View className="flex-1 bg-cream" />;
 
   return (
-    <View className="flex-1 bg-cream">
-      <WorldBackground world={theme} intensity="full" />
-      <View className="flex-1 items-center justify-center gap-2xl px-xl">
-        <Text className="text-center font-fredoka-semibold text-display-lg text-ink-900">
-          You discovered {deck.title}!
-        </Text>
-
-        <RewardAnimation badge={deck.rewardBadge} onComplete={() => setShowChoices(true)} />
-
-        {showChoices ? (
-          <Animated.View entering={FadeIn.duration(300)} className="w-full gap-md">
-            <Text className="text-center font-nunito-semibold text-body-md text-ink-600">
-              Great discovery! What next?
-            </Text>
-            <Button
-              label="Continue Exploring"
-              color={theme.primary}
-              onPress={() =>
-                navigation.reset({ index: 0, routes: [{ name: 'DiscoverySelection' }] })
-              }
-            />
-          </Animated.View>
-        ) : null}
-      </View>
-    </View>
+    <JourneyCompletionScene
+      deck={deck}
+      completedWorldIds={completedWorldIds}
+      nextWorlds={nextWorlds}
+      onExploreWorld={(worldId) => navigation.replace('WorldHome', { worldId })}
+      onReturnToMap={() => navigation.reset({ index: 0, routes: [{ name: 'DiscoverySelection' }] })}
+    />
   );
 }
