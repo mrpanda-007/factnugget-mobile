@@ -18,7 +18,6 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   const [deck, setDeck] = useState<Deck | null>(null);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [index, setIndex] = useState(0);
-  const [revealed, setRevealed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -59,16 +58,9 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     }
 
     setIndex((current) => current + 1);
-    setRevealed(false);
   }, [currentDiscovery, deck, discoveries.length, index, navigation]);
 
-  const handlePrevious =
-    index > 0
-      ? () => {
-          setIndex((current) => current - 1);
-          setRevealed(false);
-        }
-      : undefined;
+  const handlePrevious = index > 0 ? () => setIndex((current) => current - 1) : undefined;
 
   if (isLoading || !currentDiscovery) {
     return <View className="flex-1 bg-cream" />;
@@ -76,9 +68,8 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
 
   return (
     <DiscoveryCard
+      key={currentDiscovery.id}
       discovery={currentDiscovery}
-      revealed={revealed}
-      onReveal={() => setRevealed(true)}
       onNext={handleNext}
       onPrevious={handlePrevious}
     />

@@ -86,6 +86,7 @@ interface RawDiscovery {
   publishedAt?: string;
   updatedAt?: string;
   heroImage?: RawAsset | null;
+  images?: RawAsset[] | null;
   stickerReward?: { icon?: string; label?: string } | null;
   discoveryReward?: { icon?: string; label?: string } | null;
   narration?: {
@@ -181,6 +182,14 @@ export function mapDiscovery(raw: RawDiscovery): Discovery {
     // The emoji is the reason a cold, offline first launch still looks
     // finished. Required in the CMS, defaulted here regardless.
     emoji: raw.emoji ?? '✨',
+    // Provisional, UI-only field (types/Discovery.ts#images) for the
+    // Discovery Card's swipeable photo gallery — not yet a real field in the
+    // Studio schema. Defaults to empty until `images` exists in
+    // `RawDiscovery`/the GROQ projection in queries.ts; the gallery already
+    // degrades to the emoji illustration when this is empty.
+    images: (raw.images ?? [])
+      .map((asset) => buildImageUrl(asset?.ref, { width: 1200 }))
+      .filter((url): url is string => Boolean(url)),
 
     // The app's `funFact` is the single headline — the line a child repeats.
     // `funFacts` (plural) in the CMS is the extras list, surfaced on cards.

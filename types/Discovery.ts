@@ -46,6 +46,18 @@ export interface Discovery {
    * every discovery reliably has a `heroImage`.
    */
   emoji: string;
+  /**
+   * UI-only, provisional — not yet in docs/implementation/05-content-schema.md.
+   * 0–3 real photos for the Discovery Card's swipeable gallery
+   * (components/ImageCarousel.tsx). Currently verified, freely-licensed
+   * photos hotlinked from Wikimedia Commons for the mock content pass; the
+   * real pipeline is Sanity-hosted images per 04-content-platform.md. Falls
+   * back to the `emoji` placeholder per-slide (and entirely, if empty), so a
+   * discovery with fewer than 3 — or zero — real photos still renders fine.
+   * If this becomes permanent, fold it into the authoritative schema doc as
+   * a proper multi-image field rather than leaving it UI-only.
+   */
+  images: string[];
   easyDescription: string;
   mediumDescription: string;
   advancedDescription: string;

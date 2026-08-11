@@ -46,6 +46,9 @@ export const spaceDiscoveries: Discovery[] = [
     displayOrder: 1,
     heroImage: null,
     emoji: '☀️',
+    // Only 1 of 3 slots verified so far (Wikimedia rate-limited mid-pass —
+    // see types/Discovery.ts#images). Carousel handles fewer than 3 fine.
+    images: ['https://upload.wikimedia.org/wikipedia/commons/8/83/The_Sun_in_white_light.jpg'],
     funFact: 'You could fit over one million Earths inside the Sun!',
     easyDescription:
       "The Sun is a giant, glowing ball of hot gas called a star, and it's the closest star to our planet.",
@@ -75,6 +78,9 @@ export const spaceDiscoveries: Discovery[] = [
     displayOrder: 2,
     heroImage: null,
     emoji: '🌙',
+    images: [
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/A_Man_on_the_Moon%2C_AS11-40-5903_%28cropped%29.jpg/3840px-A_Man_on_the_Moon%2C_AS11-40-5903_%28cropped%29.jpg',
+    ],
     funFact: 'The Moon is slowly moving away from Earth!',
     easyDescription:
       'Every year, the Moon drifts a few centimeters farther from Earth — about as fast as your fingernails grow.',
@@ -104,6 +110,11 @@ export const spaceDiscoveries: Discovery[] = [
     displayOrder: 3,
     heroImage: null,
     emoji: '🪐',
+    images: [
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Saturn_global_view_from_Cassini%2C_rings_open_Better_Colour.png/3840px-Saturn_global_view_from_Cassini%2C_rings_open_Better_Colour.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/PIA17172_Saturn_eclipse_mosaic_bright_crop.jpg/3840px-PIA17172_Saturn_eclipse_mosaic_bright_crop.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Cassini_Saturn_Orbit_Insertion.jpg/3840px-Cassini_Saturn_Orbit_Insertion.jpg',
+    ],
     funFact: 'Saturn is so light, it could float in a giant bathtub!',
     easyDescription:
       "Saturn is made mostly of gas, and it's so much lighter than Earth that if you had a bathtub big enough, it would actually float.",
@@ -133,6 +144,10 @@ export const spaceDiscoveries: Discovery[] = [
     displayOrder: 4,
     heroImage: null,
     emoji: '🛰️',
+    images: [
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Iss072e316172_%28Oct_23%2C_2024%29_---_The_International_Space_Station_is_pictured_from_the_SpaceX_Dragon_crew_spacecraft_by_a_SpaceX_Crew-8_member_shortly_after_undocking_from_the_Harmony_module%27s_space-facing_port_%28cropped%29.jpg/3840px-thumbnail.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Volkov_during_Russian_EVA28.jpg/3840px-Volkov_during_Russian_EVA28.jpg',
+    ],
     funFact: 'Astronauts on the Space Station see 16 sunrises every day!',
     easyDescription:
       'The Space Station zooms around Earth so fast that astronauts inside see the sun rise and set 16 times in a single day.',

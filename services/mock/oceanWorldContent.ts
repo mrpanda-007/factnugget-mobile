@@ -49,6 +49,11 @@ export const oceanDiscoveries: Discovery[] = [
     displayOrder: 1,
     heroImage: null,
     emoji: '🐙',
+    images: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Common%20octopus.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Common%20octopus%20(Octopus%20vulgaris),%20Pedra%20de%20Deu,%20Medes%20Islands,%20Spain.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Capo%20Gallo%20Octopus%20vulgaris.jpg',
+    ],
     funFact: 'An octopus has three hearts!',
     easyDescription:
       'Two hearts pump blue blood to its gills, and one heart pumps blood to the rest of its body.',
@@ -78,6 +83,11 @@ export const oceanDiscoveries: Discovery[] = [
     displayOrder: 2,
     heroImage: null,
     emoji: '🐋',
+    images: [
+      'https://commons.wikimedia.org/wiki/Special:FilePath/2023-08-04%20Blue%20whale%20Isfjord%20Svalbard%2001.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/2023-08-04%20Blue%20whale%20Isfjord%20Svalbard%2003.jpg',
+      'https://commons.wikimedia.org/wiki/Special:FilePath/2024-08-11%20Blue%20whale%20Isfjord%20Svalbard%2002.jpg',
+    ],
     funFact: "A blue whale's heart is as big as a small car!",
     easyDescription:
       'Blue whales are the largest animals to have ever lived on Earth — even bigger than the biggest dinosaurs.',
@@ -107,6 +117,10 @@ export const oceanDiscoveries: Discovery[] = [
     displayOrder: 3,
     heroImage: null,
     emoji: '🦈',
+    // No verified photo URLs yet (Wikimedia rate-limited mid-verification —
+    // see the note where `images` was added to Discovery). Falls back to the
+    // emoji illustration until a couple of confirmed URLs are added here.
+    images: [],
     funFact: 'Sharks have been swimming in our oceans longer than trees have existed on land!',
     easyDescription: 'Sharks appeared over 400 million years ago — way before the dinosaurs.',
     mediumDescription:
@@ -135,6 +149,8 @@ export const oceanDiscoveries: Discovery[] = [
     displayOrder: 4,
     heroImage: null,
     emoji: '🐬',
+    // Same as shark — no verified photo URLs yet, falls back to the emoji.
+    images: [],
     funFact: 'Dolphins call each other by name!',
     easyDescription:
       'Every dolphin makes its own special whistle sound, kind of like a name, so other dolphins know exactly who is calling.',
