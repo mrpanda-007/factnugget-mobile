@@ -33,7 +33,7 @@ export function CategoryCard({
   const a11yLabel = [
     title,
     description ?? null,
-    locked ? 'Ask your parent to unlock' : null,
+    locked ? 'Grown-up preview available' : null,
     !locked && typeof progress === 'number'
       ? `${Math.round(progress * 100)} percent complete`
       : null,
@@ -64,7 +64,7 @@ export function CategoryCard({
         {locked ? (
           <View className="flex-row items-center gap-xs rounded-pill bg-surface px-md py-xs">
             <Text>🔒</Text>
-            <Text className="font-nunito-extrabold text-label text-ink-600">Ask your parent</Text>
+            <Text className="font-nunito-extrabold text-label text-ink-600">Grown-up preview</Text>
           </View>
         ) : (
           <>

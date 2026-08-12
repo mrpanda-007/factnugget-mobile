@@ -42,7 +42,7 @@ export type ParentStackParamList = {
    * tab"), then the real trust hub. Not a separate "Gate" route, so passing
    * the gate doesn't leave a back-button entry pointing at it.
    */
-  Area: undefined;
+  Area: { deckId?: string; requestedPackTitle?: string; requestId?: string } | undefined;
   PackPreview: { deckId: string };
 };
 

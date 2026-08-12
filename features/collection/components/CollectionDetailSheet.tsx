@@ -315,9 +315,9 @@ export function CollectionDetailSheet({
                       fontSize: 16,
                     }}
                   >
-                    Ask a parent when you are ready to explore this world.
+                    A grown-up can preview this World and see what&apos;s included.
                   </Text>
-                  <Button label="Ask a Parent" color={theme.primary} onPress={onAskParent} />
+                  <Button label="Grown-up Preview" color={theme.primary} onPress={onAskParent} />
                 </View>
               ) : (
                 <>

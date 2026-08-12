@@ -75,7 +75,14 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
     setSelectedDiscoveryId(null);
     setSelectedCollection(null);
     if (collection.status === 'locked') {
-      navigation.navigate('Parent', { screen: 'Area' });
+      navigation.navigate('Parent', {
+        screen: 'Area',
+        params: {
+          deckId: collection.deck.id,
+          requestedPackTitle: collection.deck.title,
+          requestId: String(Date.now()),
+        },
+      });
       return;
     }
     navigation.navigate('Explore', {
@@ -458,7 +465,15 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
         onAskParent={() => {
           setSelectedDiscoveryId(null);
           setSelectedCollection(null);
-          navigation.navigate('Parent', { screen: 'Area' });
+          if (!selectedCollection) return;
+          navigation.navigate('Parent', {
+            screen: 'Area',
+            params: {
+              deckId: selectedCollection.deck.id,
+              requestedPackTitle: selectedCollection.deck.title,
+              requestId: String(Date.now()),
+            },
+          });
         }}
       />
     </View>

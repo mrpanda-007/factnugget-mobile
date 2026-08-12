@@ -7,6 +7,8 @@ import { Card } from '@components/Card';
 interface ParentalGateProps {
   onSuccess: () => void;
   onCancel: () => void;
+  /** Names the adult-only destination without exposing it in the child flow. */
+  destinationTitle?: string;
 }
 
 interface MathProblem {
@@ -38,7 +40,7 @@ function generateProblem(previousAnswer?: number): MathProblem {
  * prompt rather than a played audio file — real narration is out of MVP
  * scope (docs/implementation/05-content-schema.md#audio-future-narration).
  */
-export function ParentalGate({ onSuccess, onCancel }: ParentalGateProps) {
+export function ParentalGate({ onSuccess, onCancel, destinationTitle }: ParentalGateProps) {
   const [problem, setProblem] = useState<MathProblem>(() => generateProblem());
   const [input, setInput] = useState('');
   const [showRetry, setShowRetry] = useState(false);
@@ -58,16 +60,31 @@ export function ParentalGate({ onSuccess, onCancel }: ParentalGateProps) {
     <View className="flex-1 items-center justify-center bg-cream px-xl">
       <Card padding="xl" radius="xl" elevation="floating" className="w-full items-center gap-lg">
         <Text
-          className="text-center font-nunito-semibold text-body-md text-ink-600"
-          accessibilityRole="text"
-          accessibilityLabel="Ask a grown-up to help with this next part."
+          accessibilityRole="header"
+          className="text-center font-fredoka-semibold text-display-lg text-ink-900"
         >
-          👨‍👩‍👧 Ask a grown-up to help!
+          Grown-ups only
         </Text>
 
-        <Text className="font-fredoka-semibold text-display-lg text-ink-900">Parent Area</Text>
+        <Text
+          className="text-center font-nunito-regular text-body-md text-ink-600"
+          accessibilityRole="text"
+          accessibilityLabel={
+            destinationTitle
+              ? `A grown-up can preview ${destinationTitle} and see what is included.`
+              : 'Ask a grown-up to open Parent Area.'
+          }
+        >
+          {destinationTitle
+            ? `A grown-up can preview ${destinationTitle} and see what’s included.`
+            : 'Ask a grown-up to open Parent Area.'}
+        </Text>
 
-        <Text className="font-nunito-regular text-body-md text-ink-600">
+        <Text
+          accessibilityRole="text"
+          accessibilityLabel={`Adult check: what is ${problem.a} plus ${problem.b}?`}
+          className="font-nunito-regular text-body-md text-ink-600"
+        >
           What is {problem.a} + {problem.b}?
         </Text>
 
@@ -81,7 +98,10 @@ export function ParentalGate({ onSuccess, onCancel }: ParentalGateProps) {
         />
 
         {showRetry ? (
-          <Text className="font-nunito-semibold text-body-sm text-coral-700">
+          <Text
+            accessibilityLiveRegion="polite"
+            className="font-nunito-semibold text-body-sm text-coral-700"
+          >
             Not quite — try the new question!
           </Text>
         ) : null}

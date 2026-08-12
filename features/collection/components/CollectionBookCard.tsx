@@ -26,7 +26,7 @@ export function CollectionBookCard({ collection, width, onPress }: Props) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${collection.deck.title}. ${locked ? 'A new world to discover. Ask a parent.' : `${collection.discoveredCount} of ${collection.totalCount} discoveries found.`}`}
+      accessibilityLabel={`${collection.deck.title}. ${locked ? 'A new world to discover. Grown-up preview available.' : `${collection.discoveredCount} of ${collection.totalCount} discoveries found.`}`}
       style={[
         elevation.resting,
         animatedStyle,

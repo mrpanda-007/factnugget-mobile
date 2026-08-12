@@ -54,7 +54,14 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
 
   const openWorld = (summary: WorldSummary) => {
     if (summary.locked) {
-      navigation.navigate('Parent', { screen: 'Area' });
+      navigation.navigate('Parent', {
+        screen: 'Area',
+        params: {
+          deckId: summary.deck.id,
+          requestedPackTitle: summary.deck.title,
+          requestId: String(Date.now()),
+        },
+      });
       return;
     }
     if (summary.status === 'in_progress' && summary.nextDiscoveryId) {
