@@ -13,6 +13,7 @@ interface CategoryCardProps {
   /** 0–1, omitted if not started. */
   progress?: number;
   discoveriesFound?: number;
+  discoveriesTotal?: number;
   /** Paid content not yet unlocked — docs/product/02-user-flows.md "Trigger 2". Shows a lock affordance instead of progress. */
   locked?: boolean;
   onPress: () => void;
@@ -25,6 +26,7 @@ export function CategoryCard({
   description,
   progress,
   discoveriesFound,
+  discoveriesTotal,
   locked = false,
   onPress,
 }: CategoryCardProps) {
@@ -71,14 +73,13 @@ export function CategoryCard({
                 <ProgressBar
                   progress={progress}
                   color={world.primary}
-                  label={`${Math.round(progress * 100)}% complete`}
+                  label={
+                    typeof discoveriesFound === 'number' && discoveriesTotal
+                      ? `${discoveriesFound} of ${discoveriesTotal} discoveries`
+                      : `${Math.round(progress * 100)}% complete`
+                  }
                 />
               </View>
-            ) : null}
-            {discoveriesFound ? (
-              <Text className="font-nunito-regular text-body-sm text-ink-600">
-                {discoveriesFound} discoveries found
-              </Text>
             ) : null}
           </>
         )}

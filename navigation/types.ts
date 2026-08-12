@@ -31,7 +31,7 @@ export type MainTabParamList = {
 export type ExploreStackParamList = {
   DiscoverySelection: undefined;
   WorldHome: { worldId: WorldId };
-  DiscoveryCard: { deckId: string };
+  DiscoveryCard: { deckId: string; discoveryId?: string };
   Completion: { deckId: string };
 };
 

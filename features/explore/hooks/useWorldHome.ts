@@ -14,6 +14,7 @@ interface WorldHomeState {
   deck: Deck | null;
   deckProgress: DeckProgress | null;
   collectionPreview: Discovery[];
+  nextDiscovery: Discovery | null;
 }
 
 const initialState: WorldHomeState = {
@@ -22,6 +23,7 @@ const initialState: WorldHomeState = {
   deck: null,
   deckProgress: null,
   collectionPreview: [],
+  nextDiscovery: null,
 };
 
 /**
@@ -42,7 +44,12 @@ export function useWorldHome(worldId: WorldId) {
       ProgressRepository.getCollection(),
     ]);
     const deck = decks[0] ?? null;
-    const deckProgress = deck ? await ProgressRepository.getDeckProgress(deck.id) : null;
+    const [deckProgress, discoveries] = deck
+      ? await Promise.all([
+          ProgressRepository.getDeckProgress(deck.id),
+          ContentRepository.getDiscoveriesForDeck(deck.id),
+        ])
+      : [null, []];
 
     let collectionPreview: Discovery[] = [];
     if (deck && collected.length > 0) {
@@ -51,15 +58,23 @@ export function useWorldHome(worldId: WorldId) {
         .map((item) => item.discoveryId)
         .filter((id) => worldDiscoveryIds.has(id))
         .slice(0, 4);
-      const discoveries = await Promise.all(
-        relevantIds.map((id) => ContentRepository.getDiscovery(id)),
-      );
-      collectionPreview = discoveries.filter(
-        (discovery): discovery is Discovery => discovery !== null,
-      );
+      const discoveriesById = new Map(discoveries.map((discovery) => [discovery.id, discovery]));
+      collectionPreview = relevantIds
+        .map((id) => discoveriesById.get(id))
+        .filter((discovery): discovery is Discovery => discovery !== undefined);
     }
 
-    setState({ isLoading: false, category, deck, deckProgress, collectionPreview });
+    const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
+    const nextDiscovery = discoveries.find((discovery) => !completedIds.has(discovery.id)) ?? null;
+
+    setState({
+      isLoading: false,
+      category,
+      deck,
+      deckProgress,
+      collectionPreview,
+      nextDiscovery,
+    });
   }, [worldId]);
 
   return { ...state, refresh: load };

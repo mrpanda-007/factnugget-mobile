@@ -1,354 +1,465 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { useReducedMotion } from 'react-native-reanimated';
-
-import { ExplorerTreasureTreeScene } from '@components/ExplorerTreasureTreeScene';
-import { explorerIdentityOptions } from '@constants/explorerIdentities';
-import { colors, fontFamily } from '@constants/tokens';
+import { useMemo, useState } from 'react';
 import {
-  createTreeBranches,
-  getTreeGrowthStage,
-  type TreeBranch,
-  type TreeCollectible,
-} from '@features/collection/treePresentation';
-import * as ContentRepository from '@repositories/ContentRepository';
-import * as ProgressRepository from '@repositories/ProgressRepository';
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInUp, useReducedMotion } from 'react-native-reanimated';
+
+import { Button } from '@components/Button';
+import { CollectionBadge } from '@features/collection/components/CollectionBadge';
+import { CollectionBookCard } from '@features/collection/components/CollectionBookCard';
+import { CollectionDetailSheet } from '@features/collection/components/CollectionDetailSheet';
+import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
+import { ExplorerSummary } from '@features/collection/components/ExplorerSummary';
+import { FeaturedCollection } from '@features/collection/components/FeaturedCollection';
+import { useCollections } from '@features/collection/hooks/useCollections';
+import { explorerIdentityOptions } from '@constants/explorerIdentities';
+import { animationDurations, colors, fontFamily, radius, spacing } from '@constants/tokens';
 import { useExplorerStore } from '@store/useExplorerStore';
-import type { Discovery } from '@app-types/Discovery';
-import type { CollectedDiscovery } from '@app-types/Progress';
+import type { ExplorerCollection } from '@features/collection/types';
 import type { CollectionScreenProps } from '@navigation/types';
 
-/**
- * The collection is an orbitable storybook museum, not an achievement grid.
- * Progress remains entirely owned by SQLite/ContentRepository; this screen only
- * derives an anchor-based visual presentation from it.
- */
+function findDiscovery(
+  collections: ExplorerCollection[],
+  discoveryId: string | null,
+): { collection: ExplorerCollection; discovery: ExplorerCollection['discoveries'][number] } | null {
+  if (!discoveryId) return null;
+  for (const collection of collections) {
+    const discovery = collection.discoveries.find((item) => item.id === discoveryId);
+    if (discovery) return { collection, discovery };
+  }
+  return null;
+}
+
 export function CollectionScreen({ navigation }: CollectionScreenProps) {
-  const identity = useExplorerStore((state) => state.identity);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
-  const [collected, setCollected] = useState<CollectedDiscovery[]>([]);
-  const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sceneReady, setSceneReady] = useState(false);
-  const [selectedCollectible, setSelectedCollectible] = useState<TreeCollectible | null>(null);
-  const [selectedBranch, setSelectedBranch] = useState<TreeBranch | null>(null);
-  const [resetToken, setResetToken] = useState(0);
+  const identity = useExplorerStore((state) => state.identity);
+  const {
+    collections,
+    featured,
+    totalDiscovered,
+    totalAvailable,
+    newestDiscoveryId,
+    isLoading,
+    loadFailed,
+    refresh,
+  } = useCollections();
+  const [selectedCollection, setSelectedCollection] = useState<ExplorerCollection | null>(null);
+  const [selectedDiscoveryId, setSelectedDiscoveryId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    const collection = await ProgressRepository.getCollection();
-    const loadedDiscoveries = await Promise.all(
-      collection.map((item) => ContentRepository.getDiscovery(item.discoveryId)),
-    );
-    setCollected(collection);
-    setDiscoveries(loadedDiscoveries.filter((item): item is Discovery => item !== null));
-    setSelectedCollectible(null);
-    setSelectedBranch(null);
-    setIsLoading(false);
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
-
-  const branches = useMemo(
-    () => createTreeBranches(discoveries, collected),
-    [collected, discoveries],
-  );
-  const growthStage = getTreeGrowthStage(discoveries.length);
   const explorer = explorerIdentityOptions.find((option) => option.id === identity);
-  const plaque = selectedCollectible ?? selectedBranch?.collectibles[0] ?? null;
+  const completedCollections = useMemo(
+    () => collections.filter((collection) => collection.status === 'completed'),
+    [collections],
+  );
+  const newestDiscovery = findDiscovery(collections, newestDiscoveryId);
+  const featuredNextDiscovery = featured?.discoveries.find(
+    (discovery) => !featured.discoveredIds.has(discovery.id),
+  );
+  const nextCollection =
+    collections.find(
+      (collection) => collection.id !== featured?.id && collection.status === 'not_started',
+    ) ?? collections.find((collection) => collection.status === 'locked');
+  const maxContentWidth = width >= 820 ? 960 : 680;
+  const horizontalPadding = width >= 700 ? spacing['2xl'] : spacing.lg;
+  const availableWidth = Math.min(width, maxContentWidth) - horizontalPadding * 2;
+  const cardWidth = width >= 700 ? (availableWidth - spacing.lg) / 2 : Math.min(330, width * 0.82);
+  const entrance = reducedMotion
+    ? FadeIn.duration(animationDurations.fast)
+    : FadeInUp.duration(animationDurations.slow);
 
-  const chooseCollectible = (collectible: TreeCollectible) => {
-    setSelectedBranch(branches.find((branch) => branch.worldId === collectible.category) ?? null);
-    setSelectedCollectible(collectible);
+  const openWorld = (collection: ExplorerCollection) => {
+    setSelectedDiscoveryId(null);
+    setSelectedCollection(null);
+    if (collection.status === 'locked') {
+      navigation.navigate('Parent', { screen: 'Area' });
+      return;
+    }
+    navigation.navigate('Explore', {
+      screen: 'WorldHome',
+      params: { worldId: collection.category.id },
+    });
   };
-  const chooseBranch = (branch: TreeBranch) => {
-    setSelectedBranch(branch);
-    setSelectedCollectible(null);
-  };
-  const closePlaque = () => {
-    setSelectedCollectible(null);
-    setSelectedBranch(null);
-  };
+
+  if (isLoading && collections.length === 0) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: spacing.md,
+          backgroundColor: colors.cream,
+        }}
+      >
+        <ActivityIndicator color={colors.ocean500} />
+        <Text style={{ color: colors.ink600, fontFamily: fontFamily.bodySemiBold, fontSize: 16 }}>
+          Opening My Discoveries…
+        </Text>
+      </View>
+    );
+  }
+
+  if (loadFailed && collections.length === 0) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: spacing.lg,
+          padding: spacing['2xl'],
+          backgroundColor: colors.cream,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.ink900,
+            fontFamily: fontFamily.displaySemiBold,
+            fontSize: 24,
+            textAlign: 'center',
+          }}
+        >
+          My Discoveries needs a moment.
+        </Text>
+        <Text
+          style={{
+            color: colors.ink600,
+            fontFamily: fontFamily.bodyRegular,
+            fontSize: 16,
+            textAlign: 'center',
+          }}
+        >
+          Everything you discovered is still safe.
+        </Text>
+        <Button label="Try Again" onPress={refresh} />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.screen}>
-      <ExplorerTreasureTreeScene
-        branches={branches}
-        growthStage={growthStage}
-        selectedCollectible={selectedCollectible}
-        onSelectCollectible={chooseCollectible}
-        onSelectBranch={chooseBranch}
-        reducedMotion={reducedMotion}
-        onReady={() => setSceneReady(true)}
-        resetToken={resetToken}
-      />
-
-      <View style={styles.header} pointerEvents="box-none">
+    <View style={{ flex: 1, backgroundColor: colors.cream }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing.lg,
+          paddingBottom: spacing['4xl'],
+          gap: spacing['2xl'],
+        }}
+      >
         <View
-          style={styles.identityPill}
-          accessible
-          accessibilityLabel={`${explorer?.label ?? 'Guest explorer'} profile`}
-        >
-          <Text style={styles.avatar}>{explorer?.emoji ?? '✦'}</Text>
-          <View>
-            <Text style={styles.identityName}>{explorer?.label ?? 'Guest explorer'}</Text>
-            <Text style={styles.identityMeta}>
-              {discoveries.length} {discoveries.length === 1 ? 'discovery' : 'discoveries'}
-            </Text>
-          </View>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Return to the whole Explorer Tree"
-          hitSlop={12}
-          onPress={() => {
-            closePlaque();
-            setResetToken((token) => token + 1);
+          style={{
+            width: '100%',
+            maxWidth: maxContentWidth,
+            alignSelf: 'center',
+            paddingHorizontal: horizontalPadding,
+            gap: spacing['2xl'],
           }}
-          style={styles.homeControl}
         >
-          <Text style={styles.homeIcon}>⌂</Text>
-        </Pressable>
-      </View>
-
-      {!sceneReady || isLoading ? (
-        <View style={styles.loading} pointerEvents="none">
-          <View style={styles.loadingCard}>
-            <ActivityIndicator color={colors.explorerGreen700} />
-            <Text style={styles.loadingText}>Growing your Explorer Tree…</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {!isLoading && discoveries.length === 0 ? (
-        <View style={styles.emptyNote} pointerEvents="none">
-          <Text style={styles.emptyTitle}>Your Explorer Tree is just beginning.</Text>
-          <Text style={styles.emptyCopy}>Every adventure helps it grow.</Text>
-        </View>
-      ) : null}
-
-      {plaque ? (
-        <View style={styles.plaque} accessible accessibilityViewIsModal>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close artifact details"
-            hitSlop={10}
-            onPress={closePlaque}
-            style={styles.closePlaque}
-          >
-            <Text style={styles.closeText}>×</Text>
-          </Pressable>
-          <Text style={styles.plaqueWorld}>{selectedBranch?.title ?? 'Explorer Tree'}</Text>
-          <Text style={styles.plaqueTitle}>{plaque.title}</Text>
-          <Text style={styles.plaqueCopy} numberOfLines={3}>
-            {plaque.funFact}
-          </Text>
-          <Text style={styles.plaqueDate}>
-            Found{' '}
-            {new Date(plaque.collectedAt).toLocaleDateString(undefined, {
-              month: 'short',
-              day: 'numeric',
-            })}
-          </Text>
-          {selectedBranch ? (
-            <Text style={styles.plaqueCount}>
-              {selectedBranch.discoveryCount}{' '}
-              {selectedBranch.discoveryCount === 1 ? 'discovery' : 'discoveries'} on this branch
+          <Animated.View entering={entrance} style={{ gap: spacing.xs }}>
+            <Text
+              style={{
+                color: colors.ink900,
+                fontFamily: fontFamily.displayBold,
+                fontSize: width >= 700 ? 36 : 32,
+              }}
+            >
+              My Discoveries
             </Text>
+            <Text
+              style={{ color: colors.ink600, fontFamily: fontFamily.bodyRegular, fontSize: 16 }}
+            >
+              Look at everything you’ve discovered!
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={entrance.delay(reducedMotion ? 0 : 60)}>
+            <ExplorerSummary
+              explorerName={`${explorer?.label ?? 'Explorer'}’s discoveries`}
+              discoveredCount={totalDiscovered}
+              availableCount={totalAvailable}
+            />
+          </Animated.View>
+
+          {newestDiscoveryId ? (
+            <Animated.View
+              entering={FadeIn.duration(animationDurations.celebration)}
+              style={{
+                alignSelf: 'center',
+                borderRadius: radius.pill,
+                backgroundColor: colors.sunshine50,
+                paddingHorizontal: spacing.lg,
+                paddingVertical: spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.sunshine700,
+                  fontFamily: fontFamily.bodyExtraBold,
+                  fontSize: 13,
+                }}
+              >
+                New Discovery added to My Discoveries
+              </Text>
+            </Animated.View>
+          ) : null}
+
+          {newestDiscovery ? (
+            <Animated.View entering={entrance.delay(reducedMotion ? 0 : 90)}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`New discovery. ${newestDiscovery.discovery.title}. ${newestDiscovery.discovery.funFact}. Tap to remember.`}
+                onPress={() => {
+                  setSelectedDiscoveryId(newestDiscovery.discovery.id);
+                  setSelectedCollection(newestDiscovery.collection);
+                }}
+                style={({ pressed }) => ({
+                  minHeight: 176,
+                  flexDirection: width >= 520 ? 'row' : 'column',
+                  alignItems: 'center',
+                  gap: spacing.lg,
+                  borderRadius: radius.xl,
+                  padding: spacing.lg,
+                  backgroundColor: colors.surface,
+                  opacity: pressed ? 0.86 : 1,
+                })}
+              >
+                <DiscoveryIllustration
+                  discovery={newestDiscovery.discovery}
+                  size={Math.min(140, width * 0.34)}
+                />
+                <View
+                  style={{
+                    flex: 1,
+                    gap: spacing.sm,
+                    alignItems: width >= 520 ? 'flex-start' : 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.sunshine700,
+                      fontFamily: fontFamily.bodyExtraBold,
+                      fontSize: 14,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    New Discovery
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.ink900,
+                      fontFamily: fontFamily.displaySemiBold,
+                      fontSize: 24,
+                    }}
+                  >
+                    {newestDiscovery.discovery.title}
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.ink600,
+                      fontFamily: fontFamily.bodyRegular,
+                      fontSize: 16,
+                      lineHeight: 23,
+                      textAlign: width >= 520 ? 'left' : 'center',
+                    }}
+                  >
+                    {newestDiscovery.discovery.funFact}
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.ocean700,
+                      fontFamily: fontFamily.bodyExtraBold,
+                      fontSize: 15,
+                    }}
+                  >
+                    Tap to remember →
+                  </Text>
+                </View>
+              </Pressable>
+            </Animated.View>
+          ) : null}
+
+          {featured ? (
+            <Animated.View
+              entering={entrance.delay(reducedMotion ? 0 : 120)}
+              style={{ gap: spacing.md }}
+            >
+              <Text
+                style={{
+                  color: colors.ink900,
+                  fontFamily: fontFamily.displaySemiBold,
+                  fontSize: 22,
+                }}
+              >
+                {featuredNextDiscovery
+                  ? `Continue with ${featuredNextDiscovery.title}`
+                  : 'Explore a World'}
+              </Text>
+              <FeaturedCollection collection={featured} onContinue={() => openWorld(featured)} />
+            </Animated.View>
           ) : null}
         </View>
-      ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Discover new worlds"
-        accessibilityHint="Opens the discovery worlds"
-        onPress={() => navigation.navigate('Explore', { screen: 'DiscoverySelection' })}
-        style={styles.exploreSign}
-      >
-        <Text style={styles.signArrow}>✦</Text>
-        <Text style={styles.signText}>Discover New Worlds</Text>
-      </Pressable>
+        {collections.length > 0 ? (
+          <Animated.View
+            entering={entrance.delay(reducedMotion ? 0 : 180)}
+            style={{ gap: spacing.md }}
+          >
+            <Text
+              style={{
+                width: '100%',
+                maxWidth: maxContentWidth,
+                alignSelf: 'center',
+                paddingHorizontal: horizontalPadding,
+                color: colors.ink900,
+                fontFamily: fontFamily.displaySemiBold,
+                fontSize: 22,
+              }}
+            >
+              Your Discovery Worlds
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: spacing.lg,
+                paddingHorizontal: Math.max(
+                  horizontalPadding,
+                  (width - maxContentWidth) / 2 + horizontalPadding,
+                ),
+                paddingBottom: spacing.sm,
+              }}
+            >
+              {collections.map((collection) => (
+                <CollectionBookCard
+                  key={collection.id}
+                  collection={collection}
+                  width={cardWidth}
+                  onPress={() => {
+                    setSelectedDiscoveryId(null);
+                    setSelectedCollection(collection);
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </Animated.View>
+        ) : null}
 
-      {!identity ? (
-        <View style={styles.guestNote} pointerEvents="none">
-          <Text style={styles.guestTitle}>Exploring as a guest</Text>
-          <Text style={styles.guestCopy}>Your tree is safely growing on this device.</Text>
+        <View
+          style={{
+            width: '100%',
+            maxWidth: maxContentWidth,
+            alignSelf: 'center',
+            paddingHorizontal: horizontalPadding,
+            gap: spacing['2xl'],
+          }}
+        >
+          {completedCollections.length > 0 ? (
+            <Animated.View
+              entering={entrance.delay(reducedMotion ? 0 : 240)}
+              style={{ gap: spacing.md }}
+            >
+              <Text
+                style={{
+                  color: colors.ink900,
+                  fontFamily: fontFamily.displaySemiBold,
+                  fontSize: 22,
+                }}
+              >
+                Badges You’ve Earned
+              </Text>
+              <View style={{ flexDirection: width >= 700 ? 'row' : 'column', gap: spacing.md }}>
+                {completedCollections.map((collection) => (
+                  <View key={collection.id} style={{ flex: 1 }}>
+                    <CollectionBadge label={collection.deck.rewardBadge.label} />
+                  </View>
+                ))}
+              </View>
+            </Animated.View>
+          ) : null}
+
+          <Animated.View
+            entering={entrance.delay(reducedMotion ? 0 : 300)}
+            style={{
+              borderRadius: radius.xl,
+              backgroundColor: colors.ocean50,
+              padding: spacing.xl,
+              gap: spacing.md,
+            }}
+          >
+            <Text
+              style={{ color: colors.ink900, fontFamily: fontFamily.displaySemiBold, fontSize: 22 }}
+            >
+              Discover Something New
+            </Text>
+            <Text
+              style={{
+                color: colors.ink600,
+                fontFamily: fontFamily.bodyRegular,
+                fontSize: 16,
+                lineHeight: 23,
+              }}
+            >
+              {nextCollection
+                ? nextCollection.status === 'locked'
+                  ? `${nextCollection.deck.title} is a new world waiting to be explored.`
+                  : `What amazing thing will you find in ${nextCollection.deck.title}?`
+                : 'Choose a world and see what amazing thing you find next.'}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                nextCollection ? `Open ${nextCollection.deck.title}` : 'Choose a discovery world'
+              }
+              onPress={() => {
+                if (nextCollection) {
+                  setSelectedDiscoveryId(null);
+                  setSelectedCollection(nextCollection);
+                } else {
+                  navigation.navigate('Explore', { screen: 'DiscoverySelection' });
+                }
+              }}
+              style={{ minHeight: 52, alignSelf: 'flex-start', justifyContent: 'center' }}
+            >
+              <Text
+                style={{
+                  color: colors.ocean700,
+                  fontFamily: fontFamily.bodyExtraBold,
+                  fontSize: 15,
+                }}
+              >
+                {nextCollection?.status === 'locked'
+                  ? 'Take a peek →'
+                  : 'Choose your next discovery →'}
+              </Text>
+            </Pressable>
+          </Animated.View>
         </View>
-      ) : null}
+      </ScrollView>
 
-      {/* Screen-reader alternative to the spatial scene. */}
-      <View accessible accessibilityLabel="Explorer Tree collection" style={styles.accessibleTree}>
-        {branches.map((branch) => (
-          <Text key={branch.id} accessibilityRole="text">
-            {branch.title}. {branch.discoveryCount} discoveries.
-          </Text>
-        ))}
-      </View>
+      <CollectionDetailSheet
+        collection={selectedCollection}
+        newestDiscoveryId={newestDiscoveryId}
+        initialDiscoveryId={selectedDiscoveryId}
+        onSelectDiscovery={setSelectedDiscoveryId}
+        onClose={() => {
+          setSelectedDiscoveryId(null);
+          setSelectedCollection(null);
+        }}
+        onContinue={() => selectedCollection && openWorld(selectedCollection)}
+        onAskParent={() => {
+          setSelectedDiscoveryId(null);
+          setSelectedCollection(null);
+          navigation.navigate('Parent', { screen: 'Area' });
+        }}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#E7E0CB', overflow: 'hidden' },
-  header: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    top: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  identityPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 24,
-    paddingVertical: 7,
-    paddingLeft: 8,
-    paddingRight: 14,
-    backgroundColor: '#FFF8E8',
-    borderWidth: 1,
-    borderColor: '#DAC397',
-    shadowColor: '#4E382A',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  avatar: { fontSize: 23, marginRight: 7 },
-  identityName: { color: '#49382A', fontFamily: fontFamily.displaySemiBold, fontSize: 13 },
-  identityMeta: { color: '#786248', fontFamily: fontFamily.bodySemiBold, fontSize: 10 },
-  homeControl: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FFF8E8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#DAC397',
-  },
-  homeIcon: { color: '#62452E', fontSize: 23, lineHeight: 25 },
-  loading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  loadingCard: {
-    alignItems: 'center',
-    gap: 9,
-    backgroundColor: '#FFF9EC',
-    borderRadius: 20,
-    paddingHorizontal: 21,
-    paddingVertical: 15,
-    borderWidth: 1,
-    borderColor: '#DDC492',
-  },
-  loadingText: { color: '#5D4834', fontFamily: fontFamily.displaySemiBold, fontSize: 14 },
-  emptyNote: {
-    position: 'absolute',
-    left: 32,
-    right: 32,
-    bottom: 128,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    color: '#4F3B2D',
-    fontFamily: fontFamily.displaySemiBold,
-    fontSize: 18,
-    textAlign: 'center',
-  },
-  emptyCopy: { color: '#6D5B45', fontFamily: fontFamily.bodySemiBold, fontSize: 13, marginTop: 4 },
-  plaque: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 116,
-    backgroundColor: '#FFF9EA',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#D9BE89',
-    padding: 17,
-    shadowColor: '#473426',
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 7 },
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  closePlaque: { position: 'absolute', right: 9, top: 7, padding: 8 },
-  closeText: {
-    color: '#786248',
-    fontFamily: fontFamily.bodyExtraBold,
-    fontSize: 23,
-    lineHeight: 23,
-  },
-  plaqueWorld: {
-    color: '#A16A2B',
-    fontFamily: fontFamily.bodyExtraBold,
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  plaqueTitle: {
-    color: '#49382A',
-    fontFamily: fontFamily.displaySemiBold,
-    fontSize: 20,
-    marginTop: 2,
-    paddingRight: 25,
-  },
-  plaqueCopy: {
-    color: '#645342',
-    fontFamily: fontFamily.bodyRegular,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 7,
-  },
-  plaqueDate: {
-    color: '#887054',
-    fontFamily: fontFamily.bodySemiBold,
-    fontSize: 11,
-    marginTop: 10,
-  },
-  plaqueCount: {
-    color: '#6C825C',
-    fontFamily: fontFamily.bodyExtraBold,
-    fontSize: 11,
-    marginTop: 4,
-  },
-  exploreSign: {
-    position: 'absolute',
-    bottom: 25,
-    alignSelf: 'center',
-    minHeight: 50,
-    paddingHorizontal: 20,
-    backgroundColor: '#795037',
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: '#B78756',
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#3F2A1E',
-    shadowOpacity: 0.23,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  signArrow: { color: '#F6D578', fontSize: 14 },
-  signText: { color: '#FFF5D7', fontFamily: fontFamily.displaySemiBold, fontSize: 15 },
-  guestNote: {
-    position: 'absolute',
-    bottom: 82,
-    alignSelf: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF9EA99',
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-  },
-  guestTitle: { color: '#685541', fontFamily: fontFamily.bodyExtraBold, fontSize: 10 },
-  guestCopy: { color: '#806C56', fontFamily: fontFamily.bodyRegular, fontSize: 9 },
-  accessibleTree: { position: 'absolute', width: 1, height: 1, opacity: 0, left: -100 },
-});

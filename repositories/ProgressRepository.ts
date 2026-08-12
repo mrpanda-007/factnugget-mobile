@@ -50,7 +50,6 @@ export function getMostRecentlyActiveDeckId(): Promise<string | null> {
 
 export async function completeDiscovery(discovery: Discovery): Promise<void> {
   await progressQueries.completeDiscovery(discovery.id, discovery.deck);
-  await progressQueries.earnSticker(`${discovery.id}-sticker`, discovery.id);
 }
 
 export function getCollection(): Promise<CollectedDiscovery[]> {

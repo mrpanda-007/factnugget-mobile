@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OllieCharacter } from '@features/onboarding/components/OllieCharacter';
 import { StorybookButton } from '@features/onboarding/components/StorybookButton';
-import { worldCollectibles } from '@constants/worldCollectibles';
 import { fontFamily, worldThemes, type WorldId } from '@constants/tokens';
 import type { WorldSummary } from '@features/explore/hooks/useWorldSummaries';
 import type { Deck } from '@app-types/Deck';
@@ -50,7 +49,6 @@ export function JourneyCompletionScene({
   const reducedMotion = useReducedMotion();
   const sequence = useSharedValue(0);
   const [controlsVisible, setControlsVisible] = useState(false);
-  const collectible = worldCollectibles[deck.category];
   const shelfWidth = Math.min(width * 0.76, 320);
   const shelfLeft = (width - shelfWidth) / 2;
   const shelfTop = Math.max(insets.top + 160, height * 0.25);
@@ -193,16 +191,22 @@ export function JourneyCompletionScene({
         ]}
         pointerEvents="none"
       >
-        <JourneyCollectible worldId={deck.category} size={artifactSize} />
+        <JourneyCollectible
+          worldId={deck.category}
+          size={artifactSize}
+          icon={deck.rewardBadge.icon}
+        />
       </Animated.View>
 
       <Animated.View style={[styles.collectibleCopy, presentationCopyStyle]} pointerEvents="none">
-        <Text style={styles.collectibleEyebrow}>Your new explorer collectible</Text>
-        <Text style={styles.collectibleName}>{collectible.name}</Text>
-        <Text style={styles.collectibleDescription}>{collectible.description}</Text>
+        <Text style={styles.collectibleEyebrow}>World badge earned</Text>
+        <Text style={styles.collectibleName}>{deck.rewardBadge.label}</Text>
+        <Text style={styles.collectibleDescription}>
+          You added every discovery in this World to My Discoveries.
+        </Text>
       </Animated.View>
       <Animated.View style={[styles.addedCopy, addedCopyStyle]} pointerEvents="none">
-        <Text style={styles.addedText}>Added to your collection</Text>
+        <Text style={styles.addedText}>Badge earned!</Text>
       </Animated.View>
 
       <Animated.View
@@ -403,123 +407,47 @@ function DiscoveryCase({
   );
 }
 
-function JourneyCollectible({ worldId, size }: { worldId: WorldId; size: number }) {
-  if (worldId === 'ocean')
-    return (
-      <Svg width={size} height={size} viewBox="0 0 140 140">
-        <Defs>
-          <LinearGradient id="shell" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#ECFFF3" />
-            <Stop offset="1" stopColor="#63AFA7" />
-          </LinearGradient>
-        </Defs>
-        <Path
-          d="M24 91 C24 52 49 26 72 26 C101 27 116 58 111 91 C98 110 48 114 24 91 Z"
-          fill="url(#shell)"
-          stroke="#376C6A"
-          strokeWidth={4}
-        />
-        <Path
-          d="M38 89 C45 62 55 48 71 32 M53 101 C59 67 68 45 74 30 M73 105 C78 70 83 47 80 32 M91 99 C94 72 96 54 88 36"
-          fill="none"
-          stroke="#DFF8ED"
-          strokeWidth={4}
-          opacity={0.8}
-        />
-        <Circle cx={70} cy={72} r={12} fill="#FFF8D7" />
-      </Svg>
-    );
-  if (worldId === 'space')
-    return (
-      <Svg width={size} height={size} viewBox="0 0 140 140">
-        <Defs>
-          <LinearGradient id="meteor" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#E3D6F6" />
-            <Stop offset="1" stopColor="#66517C" />
-          </LinearGradient>
-        </Defs>
-        <Path
-          d="M32 83 L44 41 L89 24 L114 59 L95 105 L54 112 Z"
-          fill="url(#meteor)"
-          stroke="#40344F"
-          strokeWidth={4}
-        />
-        <Path d="M45 48 l35 -12 l21 23 l-30 16 Z" fill="#B5A0D5" opacity={0.65} />
-        <Circle cx={72} cy={71} r={11} fill="#574267" opacity={0.55} />
-        <Path
-          d="M49 94 l19 8 l25 -14"
-          fill="none"
-          stroke="#F5D57D"
-          strokeWidth={4}
-          strokeLinecap="round"
-        />
-      </Svg>
-    );
-  if (worldId === 'dinosaur')
-    return (
-      <Svg width={size} height={size} viewBox="0 0 140 140">
-        <Defs>
-          <LinearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#FFEBA6" />
-            <Stop offset="0.55" stopColor="#D99A38" />
-            <Stop offset="1" stopColor="#865325" />
-          </LinearGradient>
-        </Defs>
-        <Path
-          d="M32 86 C23 58 42 29 69 25 C100 20 118 44 111 72 C109 101 81 116 57 108 C43 105 34 98 32 86 Z"
-          fill="url(#amber)"
-          stroke="#6C4521"
-          strokeWidth={4}
-        />
-        <Path
-          d="M52 78 C60 58 79 55 91 68 C86 80 74 86 63 82 L57 90 L57 82 L47 80 Z"
-          fill="#8C6335"
-          opacity={0.8}
-        />
-        <Circle cx={81} cy={68} r={2.4} fill="#50351D" />
-        <Path
-          d="M46 46 C58 36 75 35 88 41"
-          fill="none"
-          stroke="#FFF2B6"
-          strokeWidth={6}
-          strokeLinecap="round"
-          opacity={0.7}
-        />
-      </Svg>
-    );
-  if (worldId === 'animal')
-    return (
-      <Svg width={size} height={size} viewBox="0 0 140 140">
-        <Path
-          d="M35 39 C56 19 86 26 103 47 L113 88 C90 115 52 111 28 89 Z"
-          fill="#B88750"
-          stroke="#563C29"
-          strokeWidth={4}
-        />
-        <Path d="M51 58 C60 45 79 47 89 60 L86 85 C72 96 54 88 48 77 Z" fill="#F0D2A1" />
-        <Circle cx={60} cy={65} r={3} fill="#352A23" />
-        <Circle cx={79} cy={65} r={3} fill="#352A23" />
-        <Path
-          d="M67 77 C70 80 74 80 77 77"
-          fill="none"
-          stroke="#6D4D32"
-          strokeWidth={3}
-          strokeLinecap="round"
-        />
-      </Svg>
-    );
+function JourneyCollectible({
+  worldId,
+  size,
+  icon,
+}: {
+  worldId: WorldId;
+  size: number;
+  icon?: string;
+}) {
+  const theme = worldThemes[worldId];
   return (
-    <Svg width={size} height={size} viewBox="0 0 140 140">
-      <Circle cx={70} cy={70} r={43} fill="#8AAE9C" stroke="#42695B" strokeWidth={4} />
-      <Path
-        d="M28 70 H112 M70 27 C52 42 52 98 70 113 M70 27 C88 42 88 98 70 113"
-        fill="none"
-        stroke="#E8D292"
-        strokeWidth={3}
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: Math.max(2, size * 0.035),
+        borderColor: '#FFE7A0',
+        backgroundColor: theme.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#2E241B',
+        shadowOffset: { width: 0, height: Math.max(2, size * 0.04) },
+        shadowOpacity: 0.3,
+        shadowRadius: Math.max(3, size * 0.06),
+      }}
+    >
+      <View
+        style={{
+          position: 'absolute',
+          width: size * 0.78,
+          height: size * 0.78,
+          borderRadius: size * 0.39,
+          borderWidth: Math.max(1, size * 0.018),
+          borderColor: theme.secondary,
+          backgroundColor: theme.tint,
+          opacity: 0.95,
+        }}
       />
-      <Path d="M40 53 C56 43 78 46 98 55 C85 69 66 73 47 67 Z" fill="#5D9E79" />
-      <Path d="M47 80 C66 69 87 74 102 87 C83 100 57 98 42 89 Z" fill="#C7895B" />
-    </Svg>
+      <Text style={{ fontSize: size * 0.42 }}>{icon ?? theme.emoji}</Text>
+    </View>
   );
 }
 
@@ -548,7 +476,7 @@ function ExplorerCollectionShelf({
   }));
   return (
     <Animated.View style={[styles.shelf, { width, left, top }, style]} pointerEvents="none">
-      <Text style={styles.shelfTitle}>Explorer Collection</Text>
+      <Text style={styles.shelfTitle}>World Badges</Text>
       <View style={styles.shelfItems}>
         {existingWorldIds.map((worldId) => (
           <View key={worldId} style={styles.oldArtifact}>

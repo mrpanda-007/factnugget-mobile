@@ -18,7 +18,7 @@ import type { ExploreScreenProps } from '@navigation/types';
 export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'WorldHome'>) {
   const { worldId } = route.params;
   const theme = worldThemes[worldId];
-  const { isLoading, category, deck, deckProgress, collectionPreview, refresh } =
+  const { isLoading, category, deck, deckProgress, collectionPreview, nextDiscovery, refresh } =
     useWorldHome(worldId);
 
   useFocusEffect(
@@ -30,7 +30,10 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
   const handleStartOrContinue = async () => {
     if (!deck) return;
     await ProgressRepository.startOrTouchDeck(deck.id);
-    navigation.navigate('DiscoveryCard', { deckId: deck.id });
+    navigation.navigate('DiscoveryCard', {
+      deckId: deck.id,
+      discoveryId: nextDiscovery?.id,
+    });
   };
 
   const progressFraction =
@@ -42,7 +45,9 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
     ? 'New Discovery'
     : deckProgress.completedAt
       ? 'Explore Again'
-      : 'Continue Exploring';
+      : nextDiscovery
+        ? `Continue with ${nextDiscovery.title}`
+        : 'Continue Exploring';
 
   return (
     <View className="flex-1 bg-cream">
@@ -72,6 +77,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
               title={deck.title}
               progress={progressFraction}
               discoveriesFound={deckProgress?.completedDiscoveryIds.length}
+              discoveriesTotal={deck.discoveryIds.length}
               onPress={handleStartOrContinue}
             />
           </View>
@@ -79,7 +85,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
 
         <View className="gap-md">
           <SectionHeader
-            title="My Collection"
+            title="My Discoveries"
             action={{ label: 'See all', onPress: () => navigation.navigate('Collection') }}
           />
           {collectionPreview.length > 0 ? (
@@ -94,7 +100,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
             </View>
           ) : (
             <Text className="font-nunito-regular text-body-md text-ink-400">
-              Complete a discovery to start your collection!
+              Add a discovery here after you learn about it!
             </Text>
           )}
         </View>

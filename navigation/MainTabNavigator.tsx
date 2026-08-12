@@ -36,7 +36,7 @@ export function MainTabNavigator() {
       <Tab.Screen
         name="Collection"
         component={CollectionScreen}
-        options={{ tabBarLabel: 'Collection', tabBarIcon: () => <TabIcon emoji="⭐" /> }}
+        options={{ tabBarLabel: 'My Discoveries', tabBarIcon: () => <TabIcon emoji="🔎" /> }}
       />
       <Tab.Screen
         name="Parent"
