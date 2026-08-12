@@ -3,6 +3,11 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
+// Explorer Tree models are delivered as mobile-budget GLB assets. Keep these
+// extensions registered now so swapping the isolated development tree mesh for
+// the production asset does not require a bundler change.
+config.resolver.assetExts = [...config.resolver.assetExts, 'glb', 'gltf'];
+
 // Worklets needs its global setup to run before dependent modules evaluate;
 // with eager loading that setup is skipped and Reanimated blows up. Enabling
 // inlineRequires defers module loading enough for the setup to land. See
