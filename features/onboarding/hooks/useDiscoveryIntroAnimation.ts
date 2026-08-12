@@ -29,8 +29,8 @@ export const introTimeline = {
   ollieLiftDuration: 320,
   ollieSettleDuration: 300,
   ollieDelay: 1700,
-  ctaDelay: 2100,
-  ctaDuration: 500,
+  ctaDelay: 760,
+  ctaDuration: 360,
   /** Ambient cloud drift only starts once the camera has stopped. */
   ambientDelay: 2400,
   ambientDuration: 5600,

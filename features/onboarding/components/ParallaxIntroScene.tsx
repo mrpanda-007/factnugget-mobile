@@ -37,7 +37,7 @@ const SCENE = {
   camera: { x: 0.53, y: 0.56 },
   island: { centerX: 0.53, topY: 0.44, width: 0.8, maxWidth: 460 },
   ollie: { width: 0.19, maxWidth: 112 },
-  title: { topY: 0.26 },
+  title: { topY: 0.13 },
   foliage: { height: 0.28 },
   clouds: [
     { x: 0.06, y: 0.115, width: 0.36, opacity: 0.95, variant: 0, drift: 5 },
@@ -112,14 +112,7 @@ export function ParallaxIntroScene({ onExplore }: ParallaxIntroSceneProps) {
     const islandTop = height * SCENE.island.topY;
     const ollieSize = Math.min(width * SCENE.ollie.width, SCENE.ollie.maxWidth);
 
-    // "Welcome Explorer" is 16 characters of Fredoka — on anything narrower
-    // than a Pro Max it only fits by shrinking past the point where it reads as
-    // a storybook title, so narrow phones get a deliberate two-line break
-    // rather than whatever the layout engine would have chosen.
-    const stackTitle = width < 400;
-    const titleFontSize = Math.round(
-      Math.min(Math.max(width * (stackTitle ? 0.108 : 0.084), 30), 46),
-    );
+    const titleFontSize = Math.round(Math.min(Math.max(width * 0.082, 28), 40));
 
     return {
       islandWidth,
@@ -133,7 +126,6 @@ export function ParallaxIntroScene({ onExplore }: ParallaxIntroSceneProps) {
       cameraOriginY: height * SCENE.camera.y,
       foliageHeight: height * SCENE.foliage.height,
       titleTop: height * SCENE.title.topY,
-      stackTitle,
       titleFontSize,
       titleLineHeight: Math.round(titleFontSize * 1.14),
       ctaBottom: Math.max(insets.bottom, spacing.md) + spacing.xl,
@@ -307,7 +299,7 @@ export function ParallaxIntroScene({ onExplore }: ParallaxIntroSceneProps) {
         <ForegroundFoliage width={width} height={layout.foliageHeight} />
       </Animated.View>
 
-      {/* Layer 5 — UI, kept to two elements so the scene stays the interface. */}
+      {/* Layer 5 — a compact product promise and one clear action. */}
       <Animated.View
         style={[
           titleStyle,
@@ -320,14 +312,17 @@ export function ParallaxIntroScene({ onExplore }: ParallaxIntroSceneProps) {
           },
         ]}
       >
-        {/*
-          The one place in the app that opts out of OS font scaling: the line
-          break is chosen above from the measured width, and a scaled-up title
-          would reflow into the island and undo that. The CTA below keeps
-          scaling — it is the element that has to stay legible.
-        */}
         <Text
-          allowFontScaling={false}
+          style={{
+            color: islandScene.ink,
+            fontFamily: fontFamily.bodyExtraBold,
+            fontSize: 17,
+            letterSpacing: 0.5,
+          }}
+        >
+          FactNuggets
+        </Text>
+        <Text
           style={{
             fontFamily: fontFamily.displayBold,
             fontSize: layout.titleFontSize,
@@ -336,7 +331,20 @@ export function ParallaxIntroScene({ onExplore }: ParallaxIntroSceneProps) {
             textAlign: 'center',
           }}
         >
-          {layout.stackTitle ? 'Welcome\nExplorer' : 'Welcome Explorer'}
+          Welcome, Explorer!
+        </Text>
+        <Text
+          style={{
+            maxWidth: 340,
+            marginTop: spacing.sm,
+            color: islandScene.ink,
+            fontFamily: fontFamily.bodySemiBold,
+            fontSize: 16,
+            lineHeight: 23,
+            textAlign: 'center',
+          }}
+        >
+          Find amazing things about our world—and keep every discovery.
         </Text>
       </Animated.View>
 
@@ -352,7 +360,7 @@ export function ParallaxIntroScene({ onExplore }: ParallaxIntroSceneProps) {
           },
         ]}
       >
-        <StorybookButton label="Let's Explore" onPress={onExplore} disabled={!isSettled} />
+        <StorybookButton label="Start Discovering" onPress={onExplore} disabled={!isSettled} />
       </Animated.View>
     </Animated.View>
   );

@@ -16,6 +16,7 @@ export interface WorldSummary {
   locked: boolean;
   status: WorldStatus;
   lastViewedAt: string | null;
+  nextDiscoveryId: string | null;
   nextDiscoveryTitle: string | null;
 }
 
@@ -48,6 +49,7 @@ export function useWorldSummaries() {
               locked: true,
               status: 'locked',
               lastViewedAt: null,
+              nextDiscoveryId: null,
               nextDiscoveryTitle: null,
             };
           }
@@ -58,8 +60,7 @@ export function useWorldSummaries() {
           ]);
           const discoveriesFound = deckProgress?.completedDiscoveryIds.length ?? 0;
           const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
-          const nextDiscoveryTitle =
-            discoveries.find((discovery) => !completedIds.has(discovery.id))?.title ?? null;
+          const nextDiscovery = discoveries.find((discovery) => !completedIds.has(discovery.id));
           const total = deck.discoveryIds.length;
           const status: WorldStatus =
             total > 0 && discoveriesFound >= total
@@ -75,7 +76,8 @@ export function useWorldSummaries() {
             locked: false,
             status,
             lastViewedAt: deckProgress?.lastViewedAt ?? null,
-            nextDiscoveryTitle,
+            nextDiscoveryId: nextDiscovery?.id ?? null,
+            nextDiscoveryTitle: nextDiscovery?.title ?? null,
           };
         }),
       );

@@ -89,12 +89,14 @@ export function FeaturedCollection({ collection, onContinue }: Props) {
           <Button
             label={
               completed
-                ? 'Explore Again'
+                ? `Visit ${collection.category.title} Again`
                 : collection.discoveredCount > 0
                   ? nextDiscovery
                     ? `Continue with ${nextDiscovery.title}`
-                    : 'Continue Exploring'
-                  : 'Start Exploring'
+                    : `Visit ${collection.category.title}`
+                  : nextDiscovery
+                    ? `Start with ${nextDiscovery.title}`
+                    : `Visit ${collection.category.title}`
             }
             color={theme.primary}
             onPress={onContinue}

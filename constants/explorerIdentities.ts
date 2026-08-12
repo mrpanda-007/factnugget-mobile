@@ -9,27 +9,27 @@ import type { ExplorerIdentityOption } from '@app-types/ExplorerIdentity';
 export const explorerIdentityOptions: ExplorerIdentityOption[] = [
   {
     id: 'animal',
-    label: 'Animal Explorer',
+    label: 'Animal Look',
     emoji: '🐘',
-    description: 'Discover amazing creatures big and small.',
+    description: 'A warm, playful look with a friendly elephant.',
   },
   {
     id: 'space',
-    label: 'Space Explorer',
+    label: 'Space Look',
     emoji: '🚀',
-    description: 'Blast off to planets, stars, and galaxies.',
+    description: 'A bright, adventurous look with a speedy rocket.',
   },
   {
     id: 'ocean',
-    label: 'Ocean Explorer',
+    label: 'Ocean Look',
     emoji: '🌊',
-    description: "Dive deep into the ocean's biggest secrets.",
+    description: 'A calm, curious look with an ocean wave.',
   },
   {
     id: 'world',
-    label: 'World Explorer',
+    label: 'World Look',
     emoji: '🌎',
-    description: 'Explore wonders from every corner of Earth.',
+    description: 'A bold look for exploring a world of wonders.',
   },
 ];
 

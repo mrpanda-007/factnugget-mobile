@@ -18,9 +18,7 @@ import { DiscoveryIllustration } from '@features/collection/components/Discovery
 import { ExplorerSummary } from '@features/collection/components/ExplorerSummary';
 import { FeaturedCollection } from '@features/collection/components/FeaturedCollection';
 import { useCollections } from '@features/collection/hooks/useCollections';
-import { explorerIdentityOptions } from '@constants/explorerIdentities';
 import { animationDurations, colors, fontFamily, radius, spacing } from '@constants/tokens';
-import { useExplorerStore } from '@store/useExplorerStore';
 import type { ExplorerCollection } from '@features/collection/types';
 import type { CollectionScreenProps } from '@navigation/types';
 
@@ -40,7 +38,6 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
-  const identity = useExplorerStore((state) => state.identity);
   const {
     collections,
     featured,
@@ -54,7 +51,6 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
   const [selectedCollection, setSelectedCollection] = useState<ExplorerCollection | null>(null);
   const [selectedDiscoveryId, setSelectedDiscoveryId] = useState<string | null>(null);
 
-  const explorer = explorerIdentityOptions.find((option) => option.id === identity);
   const completedCollections = useMemo(
     () => collections.filter((collection) => collection.status === 'completed'),
     [collections],
@@ -182,7 +178,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
 
           <Animated.View entering={entrance.delay(reducedMotion ? 0 : 60)}>
             <ExplorerSummary
-              explorerName={`${explorer?.label ?? 'Explorer'}’s discoveries`}
+              explorerName="Your discoveries"
               discoveredCount={totalDiscovered}
               availableCount={totalAvailable}
             />

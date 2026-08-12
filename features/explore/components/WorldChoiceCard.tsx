@@ -20,10 +20,10 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
   const theme = worldThemes[summary.category.id];
   const count = summary.discoveriesFound ?? 0;
   const detail = summary.locked
-    ? 'A new world to discover'
+    ? `${summary.deck.discoveryIds.length} discoveries · Grown-up preview`
     : count > 0
-      ? `${count} of ${summary.deck.discoveryIds.length} found`
-      : summary.deck.subtitle;
+      ? `${count} of ${summary.deck.discoveryIds.length} discovered`
+      : `${summary.deck.discoveryIds.length} discoveries`;
 
   return (
     <AnimatedPressable
@@ -31,7 +31,7 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${summary.deck.title}. ${detail}.`}
+      accessibilityLabel={`${summary.category.title}. ${summary.deck.title}. ${detail}.`}
       style={[
         elevation.resting,
         animatedStyle,
@@ -64,15 +64,25 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
             <Text
               style={{ color: colors.ink900, fontFamily: fontFamily.bodyExtraBold, fontSize: 18 }}
             >
-              ⌾
+              🔒
             </Text>
           </View>
         ) : null}
       </View>
-      <View style={{ minHeight: 118, padding: spacing.lg, gap: spacing.sm }}>
+      <View style={{ minHeight: 146, padding: spacing.lg, gap: spacing.sm }}>
+        <Text
+          style={{
+            color: theme.primary,
+            fontFamily: fontFamily.bodyExtraBold,
+            fontSize: 12,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
+          }}
+        >
+          {summary.category.title}
+        </Text>
         <Text
           style={{ color: colors.ink900, fontFamily: fontFamily.displaySemiBold, fontSize: 20 }}
-          numberOfLines={1}
         >
           {summary.deck.title}
         </Text>
@@ -81,10 +91,9 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
             flex: 1,
             color: colors.ink600,
             fontFamily: fontFamily.bodySemiBold,
-            fontSize: 13,
-            lineHeight: 18,
+            fontSize: 14,
+            lineHeight: 20,
           }}
-          numberOfLines={2}
         >
           {detail}
         </Text>

@@ -28,21 +28,24 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
   const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.97);
   const theme = worldThemes[summary.category.id];
   const hasProgress = typeof summary.discoveriesFound === 'number' && summary.discoveriesFound > 0;
+  const inProgress = summary.status === 'in_progress';
   const completed = summary.status === 'completed';
   const action = summary.locked
-    ? 'Ask a Parent'
+    ? 'Grown-up Preview'
     : completed
-      ? `Explore ${summary.category.title.replace(' World', '')} Again`
-      : hasProgress
+      ? 'Visit Again'
+      : inProgress
         ? summary.nextDiscoveryTitle
-          ? `Continue with ${summary.nextDiscoveryTitle}`
-          : 'Continue Exploring'
-        : `Explore ${summary.category.title.replace(' World', '')}`;
+          ? hasProgress
+            ? `Continue with ${summary.nextDiscoveryTitle}`
+            : `Start with ${summary.nextDiscoveryTitle}`
+          : `Visit ${summary.category.title}`
+        : `Visit ${summary.category.title}`;
   const detail = summary.locked
-    ? 'A new world to discover'
-    : hasProgress
-      ? `${summary.discoveriesFound} of ${summary.deck.discoveryIds.length} discoveries found`
-      : summary.category.tagline;
+    ? `${summary.deck.discoveryIds.length} discoveries · Grown-up preview`
+    : inProgress
+      ? `${summary.discoveriesFound ?? 0} of ${summary.deck.discoveryIds.length} discovered`
+      : `${summary.deck.discoveryIds.length} discoveries`;
 
   return (
     <AnimatedPressable
@@ -50,7 +53,7 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${summary.deck.title}. ${detail}. ${action}.`}
+      accessibilityLabel={`${summary.category.title}. ${summary.deck.title}. ${detail}. ${action}.`}
       style={[
         elevation.raised,
         animatedStyle,
@@ -74,6 +77,17 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
           }}
         >
           <View style={{ gap: spacing.xs }}>
+            <Text
+              style={{
+                color: colors.surface,
+                fontFamily: fontFamily.bodyExtraBold,
+                fontSize: 14,
+                letterSpacing: 0.7,
+                textTransform: 'uppercase',
+              }}
+            >
+              {summary.category.title}
+            </Text>
             <Text style={[typeScale.displayLg, { color: colors.surface }]}>
               {summary.deck.title}
             </Text>
@@ -88,6 +102,29 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
             >
               {detail}
             </Text>
+            {inProgress && summary.nextDiscoveryTitle && !completed ? (
+              <Text
+                style={{
+                  color: colors.sunshine300,
+                  fontFamily: fontFamily.bodyExtraBold,
+                  fontSize: 15,
+                  lineHeight: 21,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Next: {summary.nextDiscoveryTitle}
+              </Text>
+            ) : completed ? (
+              <Text
+                style={{
+                  color: colors.sunshine300,
+                  fontFamily: fontFamily.bodyExtraBold,
+                  fontSize: 15,
+                }}
+              >
+                ✓ World complete
+              </Text>
+            ) : null}
           </View>
           {hasProgress && !summary.locked ? (
             <ProgressBar progress={summary.progress ?? 0} color={theme.secondary} />
@@ -104,7 +141,9 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
             }}
           >
             {summary.locked ? (
-              <Text style={{ marginRight: spacing.sm, color: colors.ink900, fontSize: 18 }}>⌾</Text>
+              <Text style={{ marginRight: spacing.sm, color: colors.ink900, fontSize: 18 }}>
+                🔒
+              </Text>
             ) : null}
             <Text
               style={{ color: theme.primary, fontFamily: fontFamily.bodyExtraBold, fontSize: 15 }}

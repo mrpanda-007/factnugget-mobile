@@ -3,11 +3,11 @@ import { ActivityIndicator, ScrollView, Text, useWindowDimensions, View } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 
+import { Avatar } from '@components/Avatar';
 import { Button } from '@components/Button';
 import { ExploreHeroCard } from '@features/explore/components/ExploreHeroCard';
 import { WorldChoiceCard } from '@features/explore/components/WorldChoiceCard';
 import { useWorldSummaries, type WorldSummary } from '@features/explore/hooks/useWorldSummaries';
-import { explorerIdentityOptions } from '@constants/explorerIdentities';
 import { animationDurations, colors, fontFamily, spacing, typeScale } from '@constants/tokens';
 import { useExplorerStore } from '@store/useExplorerStore';
 import type { ExploreScreenProps } from '@navigation/types';
@@ -31,7 +31,6 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
   const reducedMotion = useReducedMotion();
   const identity = useExplorerStore((state) => state.identity);
   const { summaries, isLoading, loadFailed, refresh } = useWorldSummaries();
-  const explorer = explorerIdentityOptions.find((option) => option.id === identity);
   const hero = useMemo(() => chooseHero(summaries), [summaries]);
   const otherWorlds = useMemo(
     () => summaries.filter((summary) => summary.deck.id !== hero?.deck.id).slice(0, 3),
@@ -56,6 +55,13 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
   const openWorld = (summary: WorldSummary) => {
     if (summary.locked) {
       navigation.navigate('Parent', { screen: 'Area' });
+      return;
+    }
+    if (summary.status === 'in_progress' && summary.nextDiscoveryId) {
+      navigation.navigate('DiscoveryCard', {
+        deckId: summary.deck.id,
+        discoveryId: summary.nextDiscoveryId,
+      });
       return;
     }
     navigation.navigate('WorldHome', { worldId: summary.category.id });
@@ -91,10 +97,10 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
         }}
       >
         <Text style={[typeScale.displayMd, { color: colors.ink900, textAlign: 'center' }]}>
-          The discovery map needs a moment.
+          Explore needs a moment.
         </Text>
         <Text style={[typeScale.bodyMd, { color: colors.ink600, textAlign: 'center' }]}>
-          Your discoveries are safe. Let’s open the map again.
+          Your discoveries are safe. Let’s try Explore again.
         </Text>
         <Button label="Try Again" onPress={refresh} />
       </View>
@@ -119,28 +125,38 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
           gap: spacing['2xl'],
         }}
       >
-        <Animated.View entering={entrance} style={{ gap: spacing.xs }}>
-          <Text
-            style={{
-              color: colors.ink600,
-              fontFamily: fontFamily.bodyExtraBold,
-              fontSize: 14,
-              textTransform: 'uppercase',
-              letterSpacing: 0.8,
-            }}
-          >
-            {returning ? 'Welcome back' : `Hello, ${explorer?.label ?? 'Explorer'}!`}
-          </Text>
-          <Text
-            style={{
-              color: colors.ink900,
-              fontFamily: fontFamily.displayBold,
-              fontSize: tablet ? 38 : 32,
-              lineHeight: tablet ? 45 : 38,
-            }}
-          >
-            {returning ? 'Your next discovery awaits.' : 'What should we discover today?'}
-          </Text>
+        <Animated.View entering={entrance} style={{ gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            {identity ? <Avatar identity={identity} size={52} /> : null}
+            <View style={{ flex: 1, gap: spacing.xs }}>
+              <Text
+                style={{
+                  color: colors.ink600,
+                  fontFamily: fontFamily.bodyExtraBold,
+                  fontSize: 14,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.8,
+                }}
+              >
+                {returning ? 'Welcome back, Explorer' : 'Welcome, Explorer'}
+              </Text>
+              <Text
+                style={{
+                  color: colors.ink900,
+                  fontFamily: fontFamily.displayBold,
+                  fontSize: tablet ? 38 : 32,
+                  lineHeight: tablet ? 45 : 38,
+                }}
+              >
+                {returning ? 'Your next discovery is waiting.' : 'What should we discover today?'}
+              </Text>
+            </View>
+          </View>
+          {!returning ? (
+            <Text style={[typeScale.bodyMd, { color: colors.ink600 }]}>
+              Choose a world and find something amazing.
+            </Text>
+          ) : null}
         </Animated.View>
 
         {hero ? (

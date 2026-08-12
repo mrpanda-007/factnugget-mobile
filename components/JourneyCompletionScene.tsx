@@ -214,7 +214,7 @@ export function JourneyCompletionScene({
         pointerEvents="none"
       >
         <OllieCharacter size={Math.min(width * 0.27, 104)} />
-        <Text style={styles.ollieNote}>You found the whole journey!</Text>
+        <Text style={styles.ollieNote}>You discovered the whole World!</Text>
       </Animated.View>
 
       <Animated.View
@@ -236,9 +236,9 @@ export function JourneyCompletionScene({
             </View>
           </>
         ) : (
-          <Text style={styles.nextPrompt}>More wonders are waiting on your explorer map.</Text>
+          <Text style={styles.nextPrompt}>More discoveries are waiting in Explore.</Text>
         )}
-        <StorybookButton label="Return to Explorer Map" onPress={onReturnToMap} />
+        <StorybookButton label="Back to Explore" onPress={onReturnToMap} />
       </Animated.View>
     </View>
   );

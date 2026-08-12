@@ -13,6 +13,7 @@ interface WorldHomeState {
   category: Category | null;
   deck: Deck | null;
   deckProgress: DeckProgress | null;
+  discoveries: Discovery[];
   collectionPreview: Discovery[];
   nextDiscovery: Discovery | null;
 }
@@ -22,6 +23,7 @@ const initialState: WorldHomeState = {
   category: null,
   deck: null,
   deckProgress: null,
+  discoveries: [],
   collectionPreview: [],
   nextDiscovery: null,
 };
@@ -72,6 +74,7 @@ export function useWorldHome(worldId: WorldId) {
       category,
       deck,
       deckProgress,
+      discoveries,
       collectionPreview,
       nextDiscovery,
     });
