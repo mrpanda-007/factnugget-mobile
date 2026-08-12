@@ -11,13 +11,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 
 import { Button } from '@components/Button';
-import { CollectionBadge } from '@features/collection/components/CollectionBadge';
 import { CollectionBookCard } from '@features/collection/components/CollectionBookCard';
 import { CollectionDetailSheet } from '@features/collection/components/CollectionDetailSheet';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
 import { ExplorerSummary } from '@features/collection/components/ExplorerSummary';
 import { FeaturedCollection } from '@features/collection/components/FeaturedCollection';
 import { useCollections } from '@features/collection/hooks/useCollections';
+import { WorldBadge } from '@features/rewards/components/WorldBadge';
 import { animationDurations, colors, fontFamily, radius, spacing } from '@constants/tokens';
 import type { ExplorerCollection } from '@features/collection/types';
 import type { CollectionScreenProps } from '@navigation/types';
@@ -369,12 +369,17 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
                   fontSize: 22,
                 }}
               >
-                Badges You’ve Earned
+                My Badges
               </Text>
               <View style={{ flexDirection: width >= 700 ? 'row' : 'column', gap: spacing.md }}>
                 {completedCollections.map((collection) => (
                   <View key={collection.id} style={{ flex: 1 }}>
-                    <CollectionBadge label={collection.deck.rewardBadge.label} />
+                    <WorldBadge
+                      worldId={collection.category.id}
+                      worldTitle={collection.category.title}
+                      title={collection.deck.rewardBadge.label}
+                      icon={collection.deck.rewardBadge.icon}
+                    />
                   </View>
                 ))}
               </View>

@@ -5,7 +5,7 @@ import { elevation } from '@constants/tokens';
 interface BadgeProps {
   label: string;
   icon: string;
-  /** 'gold' = earned/reward context — docs/design/02-component-architecture.md#badge */
+  /** 'gold' = highlighted trust/status context. */
   tone?: 'default' | 'gold';
 }
 

@@ -39,13 +39,16 @@ export async function startOrTouchDeck(deckId: string): Promise<void> {
  * that comparison lives in the calling hook, which also holds ContentRepository
  * data. This just records the fact once the hook has decided.
  */
-export async function markDeckCompleted(deckId: string): Promise<void> {
+export async function markDeckCompleted(deckId: string): Promise<boolean> {
   const db = await getDatabase();
-  await db.runAsync(
-    `UPDATE deck_progress SET completed_at = ? WHERE deck_id = ?;`,
+  const result = await db.runAsync(
+    `UPDATE deck_progress
+     SET completed_at = ?
+     WHERE deck_id = ? AND completed_at IS NULL;`,
     new Date().toISOString(),
     deckId,
   );
+  return result.changes > 0;
 }
 
 export async function completeDiscovery(discoveryId: string, deckId: string): Promise<void> {

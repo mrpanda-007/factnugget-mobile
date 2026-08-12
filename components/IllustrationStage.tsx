@@ -16,7 +16,7 @@ interface IllustrationStageProps {
 
 /**
  * Shape + gradient + emoji composition used by DiscoveryCard, CategoryCard,
- * Avatar, and Sticker — docs/design/04-asset-strategy.md#illustration-placeholder-system.
+ * Avatar and Discovery artwork — docs/design/04-asset-strategy.md#illustration-placeholder-system.
  * Not part of the public component list (docs/design/02-component-architecture.md) —
  * this is an internal building block those components share, not a
  * screen-facing component on its own. Purely decorative: the consuming

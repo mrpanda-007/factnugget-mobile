@@ -23,6 +23,7 @@ export interface ExplorerCollection {
   progress: number;
   status: CollectionStatus;
   lastViewedAt: string | null;
+  badgeEarnedAt: string | null;
 }
 
 export interface CollectionsState {

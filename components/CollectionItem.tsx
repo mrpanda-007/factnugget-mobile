@@ -15,9 +15,9 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * A shelf tile in the Collection Screen — docs/design/02-component-architecture.md#collectionitem.
- * Shows the collected discovery itself (`discoveryReward`/`emoji`), themed by
- * its world — distinct from `Sticker`, which shows the separate bonus
- * `stickerReward` collectible.
+ * Shows the collected Discovery itself (`discoveryReward`/`emoji`), themed by
+ * its World. Discoveries are the owned learning objects; World Badges are the
+ * only separate child-facing achievement.
  */
 export function CollectionItem({ discovery, onPress }: CollectionItemProps) {
   const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.95);

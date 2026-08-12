@@ -23,8 +23,8 @@ interface OllieCharacterProps {
  * PLACEHOLDER ART. The repo ships no Ollie asset yet
  * (docs/design/04-asset-strategy.md#mascot-strategy), and the existing
  * `components/ExplorerCharacter` is a different character (the yellow explorer
- * used by Avatar and the reward moments), so it is left untouched rather than
- * recoloured into Ollie. Everything below is a self-contained SVG with no
+ * used by Avatar), so it is left untouched rather than recoloured into Ollie.
+ * Everything below is a self-contained SVG with no
  * external dependency: swapping in final artwork means replacing the body of
  * this one component, and the props contract (`size`, `animated`) holds.
  *

@@ -36,7 +36,7 @@ export function startOrTouchDeck(deckId: string): Promise<void> {
 }
 
 /** Caller (a hook holding the deck's full discoveryIds from ContentRepository) decides when a deck is complete — see database/progressQueries.ts#markDeckCompleted. */
-export function markDeckCompleted(deckId: string): Promise<void> {
+export function markDeckCompleted(deckId: string): Promise<boolean> {
   return progressQueries.markDeckCompleted(deckId);
 }
 

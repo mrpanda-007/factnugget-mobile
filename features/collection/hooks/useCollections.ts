@@ -77,7 +77,7 @@ export function useCollections() {
               const discoveredCount = discoveredIds.size;
               const status = !deck.isFree
                 ? 'locked'
-                : discoveredCount >= totalCount && totalCount > 0
+                : progress?.completedAt
                   ? 'completed'
                   : discoveredCount > 0
                     ? 'in_progress'
@@ -95,6 +95,7 @@ export function useCollections() {
                 progress: totalCount ? discoveredCount / totalCount : 0,
                 status,
                 lastViewedAt: progress?.lastViewedAt ?? null,
+                badgeEarnedAt: progress?.completedAt ?? null,
               };
             }),
           );

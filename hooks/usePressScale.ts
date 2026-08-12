@@ -10,7 +10,7 @@ import { animationDurations, springs } from '@constants/tokens';
 
 /**
  * Standard tap feedback for every pressable surface (Button, Card, CategoryCard,
- * DiscoveryCard, CollectionItem, Sticker) — docs/design/03-animation-strategy.md
+ * DiscoveryCard and CollectionItem) — docs/design/03-animation-strategy.md
  * "Button / tappable card press". One hook so every surface gets the same
  * physics and the same reduced-motion fallback (opacity dim, no scale)
  * automatically, instead of six components re-implementing it slightly

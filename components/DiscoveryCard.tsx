@@ -22,6 +22,7 @@ interface DiscoveryCardProps {
   total: number;
   collected: boolean;
   nextDiscoveryTitle?: string;
+  collectedActionLabel?: string;
   onCollect: () => Promise<void>;
   onAcknowledged: () => void;
   onClose: () => void;
@@ -38,6 +39,7 @@ export function DiscoveryCard({
   total,
   collected,
   nextDiscoveryTitle,
+  collectedActionLabel,
   onCollect,
   onAcknowledged,
   onClose,
@@ -98,7 +100,7 @@ export function DiscoveryCard({
   const actionLabel = collected
     ? nextDiscoveryTitle
       ? `CONTINUE WITH ${nextDiscoveryTitle.toLocaleUpperCase()} →`
-      : `BACK TO ${theme.label.toLocaleUpperCase()} →`
+      : (collectedActionLabel ?? `BACK TO ${theme.label.toLocaleUpperCase()} →`)
     : `ADD ${discovery.title.toLocaleUpperCase()} TO MY DISCOVERIES →`;
   const lowerTitle = discovery.title.toLocaleLowerCase();
   const subjectPhrase = lowerTitle.startsWith('the ')

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { DiscoveryCard } from '@components/DiscoveryCard';
+import { worldThemes } from '@constants/tokens';
 import * as ContentRepository from '@repositories/ContentRepository';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import type { Deck } from '@app-types/Deck';
@@ -9,11 +10,13 @@ import type { Discovery } from '@app-types/Discovery';
 import type { ExploreScreenProps } from '@navigation/types';
 
 type Destination =
-  { type: 'discovery'; index: number } | { type: 'completion' } | { type: 'close' };
+  | { type: 'discovery'; index: number }
+  | { type: 'completion'; badgeEarnedNow: boolean }
+  | { type: 'close' };
 
 /** The learning interaction persists only after the explicit Add action. */
 export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'DiscoveryCard'>) {
-  const { deckId, discoveryId } = route.params;
+  const { deckId, discoveryId, replay = false } = route.params;
   const [deck, setDeck] = useState<Deck | null>(null);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [collectedIds, setCollectedIds] = useState<Set<string>>(new Set());
@@ -67,9 +70,10 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
 
   const nextDiscoveryTitle = useMemo(() => {
     if (!currentDiscovery) return undefined;
+    if (replay) return discoveries[index + 1]?.title;
     const nextIndex = nextIncompleteIndex(collectedIds);
     return nextIndex >= 0 ? discoveries[nextIndex].title : undefined;
-  }, [collectedIds, currentDiscovery, discoveries, nextIncompleteIndex]);
+  }, [collectedIds, currentDiscovery, discoveries, index, nextIncompleteIndex, replay]);
 
   const handleCollect = useCallback(async () => {
     if (!currentDiscovery || !deck) return;
@@ -81,8 +85,8 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     const allRequiredCollected =
       deck.discoveryIds.length > 0 && deck.discoveryIds.every((id) => updated.has(id));
     if (allRequiredCollected) {
-      await ProgressRepository.markDeckCompleted(deck.id);
-      destination.current = { type: 'completion' };
+      const badgeEarnedNow = await ProgressRepository.markDeckCompleted(deck.id);
+      destination.current = { type: 'completion', badgeEarnedNow };
       return;
     }
 
@@ -92,6 +96,15 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   }, [collectedIds, currentDiscovery, deck, nextIncompleteIndex]);
 
   const handleAcknowledged = useCallback(() => {
+    if (replay && deck) {
+      if (index < discoveries.length - 1) {
+        setIndex((current) => current + 1);
+      } else {
+        navigation.replace('Completion', { deckId: deck.id, badgeEarnedNow: false });
+      }
+      return;
+    }
+
     let target = destination.current;
     if (target.type === 'close' && currentDiscovery && collectedIds.has(currentDiscovery.id)) {
       const nextIndex = nextIncompleteIndex(collectedIds);
@@ -99,14 +112,26 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     }
 
     if (target.type === 'completion' && deck) {
-      navigation.replace('Completion', { deckId: deck.id });
+      navigation.replace('Completion', {
+        deckId: deck.id,
+        badgeEarnedNow: target.badgeEarnedNow,
+      });
     } else if (target.type === 'discovery') {
       destination.current = { type: 'close' };
       setIndex(target.index);
     } else {
       navigation.goBack();
     }
-  }, [collectedIds, currentDiscovery, deck, navigation, nextIncompleteIndex]);
+  }, [
+    collectedIds,
+    currentDiscovery,
+    deck,
+    discoveries.length,
+    index,
+    navigation,
+    nextIncompleteIndex,
+    replay,
+  ]);
 
   if (isLoading || !currentDiscovery) {
     return <View className="flex-1 bg-cream" />;
@@ -120,6 +145,11 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
       total={discoveries.length}
       collected={collectedIds.has(currentDiscovery.id)}
       nextDiscoveryTitle={nextDiscoveryTitle}
+      collectedActionLabel={
+        replay && index === discoveries.length - 1
+          ? `FINISH EXPLORING ${worldThemes[currentDiscovery.category].label.toLocaleUpperCase()} →`
+          : undefined
+      }
       onCollect={handleCollect}
       onAcknowledged={handleAcknowledged}
       onClose={() => navigation.goBack()}

@@ -60,6 +60,15 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
     });
   };
 
+  const handleReplay = () => {
+    if (!deck || !discoveries[0]) return;
+    navigation.navigate('DiscoveryCard', {
+      deckId: deck.id,
+      discoveryId: discoveries[0].id,
+      replay: true,
+    });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <WorldBackground world={theme} intensity="subtle" />
@@ -210,6 +219,14 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
               color={theme.primary}
               onPress={handlePrimaryAction}
             />
+            {worldCompleted ? (
+              <Button
+                label={`EXPLORE ${worldName.toLocaleUpperCase()} AGAIN`}
+                variant="secondary"
+                color={theme.primary}
+                onPress={handleReplay}
+              />
+            ) : null}
           </View>
         ) : null}
 
