@@ -1,8 +1,10 @@
-import * as identityQueries from '@database/identityQueries';
-import * as progressQueries from '@database/progressQueries';
+import { getSQLiteProgressRepository } from '../application/discoveryProgressRuntime';
+import * as ExplorerRepository from '@repositories/ExplorerRepository';
+import { getDatabase } from '@database/client';
 import type { Discovery } from '@app-types/Discovery';
 import type { ExplorerIdentityId } from '@app-types/ExplorerIdentity';
 import type { CollectedDiscovery, DeckProgress, EarnedSticker } from '@app-types/Progress';
+import { parseDiscoveryId, parseLearningPackId, parseWorldId } from '@app-types/domain/ids';
 
 /**
  * The only module screens/hooks call for identity, settings, and local
@@ -16,46 +18,116 @@ import type { CollectedDiscovery, DeckProgress, EarnedSticker } from '@app-types
  */
 
 export function getIdentity(): Promise<ExplorerIdentityId | null> {
-  return identityQueries.readIdentity();
+  return ExplorerRepository.getActiveExplorerState().then(
+    ({ explorer }) => explorer?.lookId ?? null,
+  );
 }
 
 export function setIdentity(identityId: ExplorerIdentityId): Promise<void> {
-  return identityQueries.writeIdentity(identityId);
+  return ExplorerRepository.createOrUpdateActiveExplorer(identityId).then(() => undefined);
 }
 
 export function getSoundEnabled(): Promise<boolean> {
-  return identityQueries.readSoundEnabled();
+  return ExplorerRepository.getActiveExplorerState().then(({ soundEnabled }) => soundEnabled);
 }
 
 export function setSoundEnabled(enabled: boolean): Promise<void> {
-  return identityQueries.writeSoundEnabled(enabled);
+  return ExplorerRepository.setSoundEnabled(enabled);
+}
+
+async function activeExplorerId() {
+  const { explorer } = await ExplorerRepository.getActiveExplorerState();
+  if (!explorer) throw new Error('No active Explorer is available for progress access.');
+  return explorer.id;
 }
 
 export function startOrTouchDeck(deckId: string): Promise<void> {
-  return progressQueries.startOrTouchDeck(deckId);
+  return activeExplorerId().then((explorerId) =>
+    getSQLiteProgressRepository().startOrTouchLearningPack(
+      explorerId,
+      parseLearningPackId(deckId),
+      new Date().toISOString(),
+    ),
+  );
 }
 
 /** Caller (a hook holding the deck's full discoveryIds from ContentRepository) decides when a deck is complete — see database/progressQueries.ts#markDeckCompleted. */
 export function markDeckCompleted(deckId: string): Promise<boolean> {
-  return progressQueries.markDeckCompleted(deckId);
+  return activeExplorerId().then((explorerId) =>
+    getSQLiteProgressRepository().completeLearningPack(
+      explorerId,
+      parseLearningPackId(deckId),
+      '',
+      new Date().toISOString(),
+    ),
+  );
 }
 
-export function getDeckProgress(deckId: string): Promise<DeckProgress | null> {
-  return progressQueries.readDeckProgress(deckId);
+export async function getDeckProgress(deckId: string): Promise<DeckProgress | null> {
+  const explorerId = await activeExplorerId();
+  const learningPackId = parseLearningPackId(deckId);
+  const repository = getSQLiteProgressRepository();
+  const progress = await repository.getLearningPackProgress(explorerId, learningPackId);
+  if (!progress) return null;
+  return {
+    deckId,
+    startedAt: progress.startedAt,
+    lastViewedAt: progress.lastViewedAt,
+    completedAt: progress.completedAt,
+    completedDiscoveryIds: await repository.listCompletedPackDiscoveryIds(
+      explorerId,
+      learningPackId,
+    ),
+  };
 }
 
-export function getMostRecentlyActiveDeckId(): Promise<string | null> {
-  return progressQueries.readMostRecentlyActiveDeckId();
+export async function getMostRecentlyActiveDeckId(): Promise<string | null> {
+  const db = await getDatabase();
+  const explorerId = await activeExplorerId();
+  const row = await db.getFirstAsync<{ learning_pack_id: string }>(
+    `SELECT learning_pack_id FROM learning_pack_progress
+     WHERE explorer_id = ? AND completed_at IS NULL ORDER BY last_viewed_at DESC LIMIT 1;`,
+    explorerId,
+  );
+  return row?.learning_pack_id ?? null;
 }
 
 export async function completeDiscovery(discovery: Discovery): Promise<void> {
-  await progressQueries.completeDiscovery(discovery.id, discovery.deck);
+  const explorerId = await activeExplorerId();
+  await getSQLiteProgressRepository().collectDiscovery({
+    explorerId,
+    discoveryId: parseDiscoveryId(discovery.id),
+    occurredAt: new Date().toISOString(),
+  });
 }
 
-export function getCollection(): Promise<CollectedDiscovery[]> {
-  return progressQueries.readCollectedDiscoveries();
+export async function getCollection(): Promise<CollectedDiscovery[]> {
+  const explorerId = await activeExplorerId();
+  return getSQLiteProgressRepository().listCollectedDiscoveries(explorerId);
 }
 
 export function getEarnedStickers(): Promise<EarnedSticker[]> {
-  return progressQueries.readEarnedStickers();
+  return getDatabase().then((db) =>
+    db
+      .getAllAsync<{ sticker_id: string; discovery_id: string; earned_at: string }>(
+        'SELECT sticker_id, discovery_id, earned_at FROM stickers ORDER BY earned_at DESC;',
+      )
+      .then((rows) =>
+        rows.map((row) => ({
+          stickerId: row.sticker_id,
+          discoveryId: row.discovery_id,
+          earnedAt: row.earned_at,
+        })),
+      ),
+  );
+}
+
+export async function getWorldBadge(worldId: string) {
+  const explorerId = await activeExplorerId();
+  return getSQLiteProgressRepository().getEarnedBadge(explorerId, parseWorldId(worldId));
+}
+
+export async function getEarnedBadges() {
+  const explorerId = await activeExplorerId();
+  return getSQLiteProgressRepository().listEarnedBadges(explorerId);
 }

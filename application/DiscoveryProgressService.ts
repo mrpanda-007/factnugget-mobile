@@ -22,6 +22,10 @@ interface DiscoveryProgressServiceDependencies {
   now?: () => string;
 }
 
+interface TransactionalProgressRepository {
+  withTransaction<T>(work: () => Promise<T>): Promise<T>;
+}
+
 /**
  * Owns the reveal → collect → Pack completion → World Badge transaction
  * semantics. Persistence implementations stay behind repository contracts.
@@ -44,66 +48,82 @@ export class DiscoveryProgressService {
   async revealDiscovery(input: DiscoveryEncounterInput): Promise<void> {
     await this.requireMembership(input.learningPackId, input.discoveryId);
     const occurredAt = this.now();
-
-    await this.progress.startOrTouchLearningPack(
-      input.explorerId,
-      input.learningPackId,
-      occurredAt,
-    );
-    await this.progress.markDiscoveryRevealed({
-      explorerId: input.explorerId,
-      discoveryId: input.discoveryId,
-      occurredAt,
+    await this.inTransaction(async () => {
+      await this.progress.startOrTouchLearningPack(
+        input.explorerId,
+        input.learningPackId,
+        occurredAt,
+      );
+      await this.progress.markDiscoveryRevealed({
+        explorerId: input.explorerId,
+        discoveryId: input.discoveryId,
+        occurredAt,
+      });
+      await this.progress.markPackDiscoveryRevealed({ ...input, occurredAt });
     });
-    await this.progress.markPackDiscoveryRevealed({ ...input, occurredAt });
   }
 
   async collectDiscovery(input: DiscoveryEncounterInput): Promise<CollectDiscoveryResult> {
     const pack = await this.content.getLearningPack(input.learningPackId);
     if (!pack) throw new Error(`Learning Pack not found: ${input.learningPackId}`);
-    await this.requireMembership(input.learningPackId, input.discoveryId);
+    const packDiscoveries = await this.content.listPackDiscoveries(input.learningPackId);
+    if (!packDiscoveries.some(({ membership }) => membership.discoveryId === input.discoveryId)) {
+      throw new Error(
+        `Discovery ${input.discoveryId} is not in Learning Pack ${input.learningPackId}.`,
+      );
+    }
+    const world = await this.content.getWorld(pack.worldId);
+    if (!world) throw new Error(`World not found: ${pack.worldId}`);
+    const requiredPacks = (await this.content.listLearningPacksForWorld(pack.worldId)).filter(
+      (candidate) => candidate.completionRole === 'required',
+    );
+    const requiredDiscoveries = packDiscoveries.filter(
+      ({ membership }) => membership.completionRole === 'required',
+    );
 
     const occurredAt = this.now();
-    await this.progress.startOrTouchLearningPack(
-      input.explorerId,
-      input.learningPackId,
-      occurredAt,
-    );
-    await this.progress.markDiscoveryRevealed({
-      explorerId: input.explorerId,
-      discoveryId: input.discoveryId,
-      occurredAt,
+    return this.inTransaction(async () => {
+      await this.progress.startOrTouchLearningPack(
+        input.explorerId,
+        input.learningPackId,
+        occurredAt,
+      );
+      await this.progress.markDiscoveryRevealed({
+        explorerId: input.explorerId,
+        discoveryId: input.discoveryId,
+        occurredAt,
+      });
+      await this.progress.markPackDiscoveryRevealed({ ...input, occurredAt });
+      const discoveryCollectedNow = await this.progress.collectDiscovery({
+        explorerId: input.explorerId,
+        discoveryId: input.discoveryId,
+        occurredAt,
+      });
+      const packMembershipCompletedNow = await this.progress.completePackDiscovery({
+        ...input,
+        occurredAt,
+      });
+      const learningPackCompletedNow = await this.completePackWhenReady(
+        input.explorerId,
+        input.learningPackId,
+        pack.revision,
+        occurredAt,
+        requiredDiscoveries,
+      );
+      const worldBadgeEarnedNow = await this.earnWorldBadgeWhenReady(
+        input.explorerId,
+        pack.worldId,
+        world.revision,
+        occurredAt,
+        requiredPacks,
+      );
+      return {
+        discoveryCollectedNow,
+        packMembershipCompletedNow,
+        learningPackCompletedNow,
+        worldBadgeEarnedNow,
+      };
     });
-    await this.progress.markPackDiscoveryRevealed({ ...input, occurredAt });
-
-    const discoveryCollectedNow = await this.progress.collectDiscovery({
-      explorerId: input.explorerId,
-      discoveryId: input.discoveryId,
-      occurredAt,
-    });
-    const packMembershipCompletedNow = await this.progress.completePackDiscovery({
-      ...input,
-      occurredAt,
-    });
-
-    const learningPackCompletedNow = await this.completePackWhenReady(
-      input.explorerId,
-      input.learningPackId,
-      pack.revision,
-      occurredAt,
-    );
-    const worldBadgeEarnedNow = await this.earnWorldBadgeWhenReady(
-      input.explorerId,
-      pack.worldId,
-      occurredAt,
-    );
-
-    return {
-      discoveryCollectedNow,
-      packMembershipCompletedNow,
-      learningPackCompletedNow,
-      worldBadgeEarnedNow,
-    };
   }
 
   /** Resume is based on Pack membership, never on global collection state. */
@@ -141,11 +161,8 @@ export class DiscoveryProgressService {
     learningPackId: LearningPackId,
     completionRevision: string,
     occurredAt: string,
+    required: PackDiscovery[],
   ): Promise<boolean> {
-    const required = (await this.content.listPackDiscoveries(learningPackId)).filter(
-      ({ membership }) => membership.completionRole === 'required',
-    );
-
     for (const { discovery } of required) {
       const progress = await this.progress.getPackDiscoveryProgress(
         explorerId,
@@ -166,22 +183,24 @@ export class DiscoveryProgressService {
   private async earnWorldBadgeWhenReady(
     explorerId: ExplorerId,
     worldId: WorldId,
+    contentRevision: string,
     occurredAt: string,
+    requiredPacks: Awaited<ReturnType<ContentRepositoryContract['listLearningPacksForWorld']>>,
   ): Promise<boolean> {
     // Historical completion is durable even when current content gains new requirements.
     if (await this.progress.getEarnedBadge(explorerId, worldId)) return false;
-
-    const world = await this.content.getWorld(worldId);
-    if (!world) throw new Error(`World not found: ${worldId}`);
-    const requiredPacks = (await this.content.listLearningPacksForWorld(worldId)).filter(
-      (pack) => pack.completionRole === 'required',
-    );
 
     for (const pack of requiredPacks) {
       const progress = await this.progress.getLearningPackProgress(explorerId, pack.id);
       if (!progress?.completedAt) return false;
     }
 
-    return this.progress.earnWorldBadge(explorerId, worldId, world.revision, occurredAt);
+    return this.progress.earnWorldBadge(explorerId, worldId, contentRevision, occurredAt);
+  }
+
+  private inTransaction<T>(work: () => Promise<T>): Promise<T> {
+    const transactional = this.progress as ProgressRepositoryContract &
+      Partial<TransactionalProgressRepository>;
+    return transactional.withTransaction ? transactional.withTransaction(work) : work();
   }
 }

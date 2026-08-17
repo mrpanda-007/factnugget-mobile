@@ -26,10 +26,10 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
     Promise.all([
       ContentRepository.getDeck(deckId),
       ContentRepository.getDiscoveriesForDeck(deckId),
-      ProgressRepository.getDeckProgress(deckId),
-    ]).then(([deck, discoveries, progress]) => {
+    ]).then(async ([deck, discoveries]) => {
       if (!cancelled && deck) {
-        setData({ deck, discoveries, badgePersisted: Boolean(progress?.completedAt) });
+        const badge = await ProgressRepository.getWorldBadge(deck.category);
+        if (!cancelled) setData({ deck, discoveries, badgePersisted: Boolean(badge) });
       }
     });
     return () => {

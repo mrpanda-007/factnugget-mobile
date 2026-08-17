@@ -5,6 +5,9 @@ import { DiscoveryCard } from '@components/DiscoveryCard';
 import { worldThemes } from '@constants/tokens';
 import * as ContentRepository from '@repositories/ContentRepository';
 import * as ProgressRepository from '@repositories/ProgressRepository';
+import { getDiscoveryProgressService } from '../../../application/discoveryProgressRuntime';
+import { parseDiscoveryId, parseLearningPackId } from '@app-types/domain/ids';
+import { useExplorerStore } from '@store/useExplorerStore';
 import type { Deck } from '@app-types/Deck';
 import type { Discovery } from '@app-types/Discovery';
 import type { ExploreScreenProps } from '@navigation/types';
@@ -17,6 +20,7 @@ type Destination =
 /** The learning interaction persists only after the explicit Add action. */
 export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'DiscoveryCard'>) {
   const { deckId, discoveryId, replay = false } = route.params;
+  const explorerId = useExplorerStore((state) => state.explorerId);
   const [deck, setDeck] = useState<Deck | null>(null);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [collectedIds, setCollectedIds] = useState<Set<string>>(new Set());
@@ -53,9 +57,18 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     return () => {
       cancelled = true;
     };
-  }, [deckId, discoveryId]);
+  }, [deckId, discoveryId, explorerId, replay]);
 
   const currentDiscovery = discoveries[index];
+
+  useEffect(() => {
+    if (!explorerId || !deck || !currentDiscovery || replay) return;
+    void getDiscoveryProgressService().revealDiscovery({
+      explorerId,
+      learningPackId: parseLearningPackId(deck.id),
+      discoveryId: parseDiscoveryId(currentDiscovery.id),
+    });
+  }, [currentDiscovery, deck, explorerId, replay]);
 
   const nextIncompleteIndex = useCallback(
     (ids: Set<string>) => {
@@ -78,22 +91,23 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   const handleCollect = useCallback(async () => {
     if (!currentDiscovery || !deck) return;
 
-    await ProgressRepository.completeDiscovery(currentDiscovery);
+    if (!explorerId) throw new Error('An active Explorer is required to collect a Discovery.');
+    const result = await getDiscoveryProgressService().collectDiscovery({
+      explorerId,
+      learningPackId: parseLearningPackId(deck.id),
+      discoveryId: parseDiscoveryId(currentDiscovery.id),
+    });
     const updated = new Set(collectedIds).add(currentDiscovery.id);
     setCollectedIds(updated);
-
-    const allRequiredCollected =
-      deck.discoveryIds.length > 0 && deck.discoveryIds.every((id) => updated.has(id));
-    if (allRequiredCollected) {
-      const badgeEarnedNow = await ProgressRepository.markDeckCompleted(deck.id);
-      destination.current = { type: 'completion', badgeEarnedNow };
+    if (result.learningPackCompletedNow) {
+      destination.current = { type: 'completion', badgeEarnedNow: result.worldBadgeEarnedNow };
       return;
     }
 
     const nextIndex = nextIncompleteIndex(updated);
     destination.current =
       nextIndex >= 0 ? { type: 'discovery', index: nextIndex } : { type: 'close' };
-  }, [collectedIds, currentDiscovery, deck, nextIncompleteIndex]);
+  }, [collectedIds, currentDiscovery, deck, explorerId, nextIncompleteIndex]);
 
   const handleAcknowledged = useCallback(() => {
     if (replay && deck) {

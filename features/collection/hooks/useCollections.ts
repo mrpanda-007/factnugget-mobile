@@ -60,9 +60,10 @@ export function useCollections() {
           const decks = await ContentRepository.getDecksForCategory(category.id);
           return Promise.all(
             decks.map(async (deck): Promise<ExplorerCollection> => {
-              const [discoveries, progress] = await Promise.all([
+              const [discoveries, progress, badge] = await Promise.all([
                 ContentRepository.getDiscoveriesForDeck(deck.id),
                 ProgressRepository.getDeckProgress(deck.id),
+                ProgressRepository.getWorldBadge(category.id),
               ]);
               const discoveredIds = new Set(
                 discoveries.filter((item) => collectedById.has(item.id)).map((item) => item.id),
@@ -77,7 +78,7 @@ export function useCollections() {
               const discoveredCount = discoveredIds.size;
               const status = !deck.isFree
                 ? 'locked'
-                : progress?.completedAt
+                : badge
                   ? 'completed'
                   : discoveredCount > 0
                     ? 'in_progress'
@@ -95,7 +96,7 @@ export function useCollections() {
                 progress: totalCount ? discoveredCount / totalCount : 0,
                 status,
                 lastViewedAt: progress?.lastViewedAt ?? null,
-                badgeEarnedAt: progress?.completedAt ?? null,
+                badgeEarnedAt: badge?.earnedAt ?? null,
               };
             }),
           );

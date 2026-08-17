@@ -38,7 +38,7 @@ export interface EarnedBadge {
   explorerId: ExplorerId;
   worldId: WorldId;
   earnedAt: string;
-  contentRevision: string;
+  contentRevision: string | null;
 }
 
 export type DiscoveryProgressState = 'unseen' | 'revealed' | 'collected';

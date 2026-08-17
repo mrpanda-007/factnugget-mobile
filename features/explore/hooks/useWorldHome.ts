@@ -7,12 +7,14 @@ import type { Category } from '@app-types/Category';
 import type { Deck } from '@app-types/Deck';
 import type { Discovery } from '@app-types/Discovery';
 import type { DeckProgress } from '@app-types/Progress';
+import type { EarnedBadge } from '@app-types/domain/progress';
 
 interface WorldHomeState {
   isLoading: boolean;
   category: Category | null;
   deck: Deck | null;
   deckProgress: DeckProgress | null;
+  worldBadge: EarnedBadge | null;
   discoveries: Discovery[];
   collectionPreview: Discovery[];
   nextDiscovery: Discovery | null;
@@ -23,6 +25,7 @@ const initialState: WorldHomeState = {
   category: null,
   deck: null,
   deckProgress: null,
+  worldBadge: null,
   discoveries: [],
   collectionPreview: [],
   nextDiscovery: null,
@@ -46,12 +49,13 @@ export function useWorldHome(worldId: WorldId) {
       ProgressRepository.getCollection(),
     ]);
     const deck = decks[0] ?? null;
-    const [deckProgress, discoveries] = deck
+    const [deckProgress, discoveries, worldBadge] = deck
       ? await Promise.all([
           ProgressRepository.getDeckProgress(deck.id),
           ContentRepository.getDiscoveriesForDeck(deck.id),
+          ProgressRepository.getWorldBadge(worldId),
         ])
-      : [null, []];
+      : [null, [], null];
 
     let collectionPreview: Discovery[] = [];
     if (deck && collected.length > 0) {
@@ -74,6 +78,7 @@ export function useWorldHome(worldId: WorldId) {
       category,
       deck,
       deckProgress,
+      worldBadge,
       discoveries,
       collectionPreview,
       nextDiscovery,

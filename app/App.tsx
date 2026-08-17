@@ -16,6 +16,9 @@ import { AppProviders } from '@providers/AppProviders';
 import { RootNavigator } from '@navigation/RootNavigator';
 import { useExplorerStore } from '@store/useExplorerStore';
 import { useUIStore } from '@store/useUIStore';
+import { Phase7SQLiteValidationScreen } from '@features/dev/Phase7SQLiteValidationScreen';
+
+const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
 
 /**
  * App-level composition root (docs/implementation/02-folder-structure.md).
@@ -27,6 +30,11 @@ import { useUIStore } from '@store/useUIStore';
  * decision (docs/design/01-screen-map.md) never flashes the wrong flow.
  */
 export default function App() {
+  if (showPhase7Validation) return <Phase7SQLiteValidationScreen />;
+  return <FactNuggetsApp />;
+}
+
+function FactNuggetsApp() {
   const setAppShellReady = useUIStore((state) => state.setAppShellReady);
   const isHydrated = useExplorerStore((state) => state.isHydrated);
   const hydrate = useExplorerStore((state) => state.hydrate);

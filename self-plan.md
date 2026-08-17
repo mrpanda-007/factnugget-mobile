@@ -65,3 +65,7 @@ PHASE 1 — PRODUCT PLANNING
 10 Notifications
 11 Analytics + production hardening
 12 Content expansion / launch
+
+17 august 26
+
+Phase Status now What happens 5. Data model & architecture Mostly done 5A + 5B are done. 5C Sanity schema work was done on the other machine. 5D is paused because you don't have the Studio repo here. 6. Sanity CMS + real content pipeline Paused This is the main thing we're temporarily skipping. Typed GROQ, DTO mapping, Sanity cutover, content sync, image pipeline all wait until you have the Studio repo again. 7. Local database & persistence Do now This is Phase 5E in our detailed breakdown. Explorer-scoped SQLite, real progress persistence, badges, Pack progress, migrations. 8. Real monetisation / IAP Not yet We can prepare entitlement architecture, but I would not build real StoreKit/Play Billing yet. 9. Firebase Auth + cloud accounts Can start after local DB foundation Firebase project setup and Auth foundation are okay; real sync should follow SQLite. 10. Notifications Skip for now No reason to build this yet. 11. Analytics + production hardening Mostly later Some testing/hardening can happen continuously, but full analytics should wait until flows/data are stable. 12. Content expansion / launch Skip for now Don't scale content until Sanity + local persistence + monetisation foundation are solid.

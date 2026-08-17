@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 
-import * as ProgressRepository from '@repositories/ProgressRepository';
+import * as ExplorerRepository from '@repositories/ExplorerRepository';
 import type { ExplorerIdentityId } from '@app-types/ExplorerIdentity';
+import type { ExplorerId } from '@app-types/domain/ids';
 
 /**
  * Client state for the explorer session — docs/implementation/07-state-management.md.
@@ -17,6 +18,7 @@ import type { ExplorerIdentityId } from '@app-types/ExplorerIdentity';
  */
 interface ExplorerState {
   isHydrated: boolean;
+  explorerId: ExplorerId | null;
   identity: ExplorerIdentityId | null;
   soundEnabled: boolean;
   activeDeckId: string | null;
@@ -31,27 +33,30 @@ interface ExplorerState {
 
 export const useExplorerStore = create<ExplorerState>((set, get) => ({
   isHydrated: false,
+  explorerId: null,
   identity: null,
   soundEnabled: false,
   activeDeckId: null,
   currentDiscoveryIndex: 0,
 
   hydrate: async () => {
-    const [identity, soundEnabled] = await Promise.all([
-      ProgressRepository.getIdentity(),
-      ProgressRepository.getSoundEnabled(),
-    ]);
-    set({ identity, soundEnabled, isHydrated: true });
+    const { explorer, soundEnabled } = await ExplorerRepository.getActiveExplorerState();
+    set({
+      explorerId: explorer?.id ?? null,
+      identity: explorer?.lookId ?? null,
+      soundEnabled,
+      isHydrated: true,
+    });
   },
 
   chooseIdentity: async (identityId) => {
-    await ProgressRepository.setIdentity(identityId);
-    set({ identity: identityId });
+    const explorer = await ExplorerRepository.createOrUpdateActiveExplorer(identityId);
+    set({ explorerId: explorer.id, identity: explorer.lookId });
   },
 
   toggleSound: async () => {
     const next = !get().soundEnabled;
-    await ProgressRepository.setSoundEnabled(next);
+    await ExplorerRepository.setSoundEnabled(next);
     set({ soundEnabled: next });
   },
 

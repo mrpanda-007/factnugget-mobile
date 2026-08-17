@@ -90,14 +90,9 @@ export function useParentProgress() {
           discoveries: await ContentRepository.getDiscoveriesForDeck(deck.id),
         })),
       );
-      const [collected, deckProgress] = await Promise.all([
+      const [collected, earnedBadges] = await Promise.all([
         ProgressRepository.getCollection(),
-        Promise.all(
-          deckContent.map(async ({ deck }) => ({
-            deckId: deck.id,
-            progress: await ProgressRepository.getDeckProgress(deck.id),
-          })),
-        ),
+        ProgressRepository.getEarnedBadges(),
       ]);
 
       const discoveryById = new Map(
@@ -105,12 +100,7 @@ export function useParentProgress() {
           discoveries.map((discovery) => [discovery.id, discovery]),
         ),
       );
-      const entryByDeckId = new Map(deckContent.map((entry) => [entry.deck.id, entry]));
-      const completedAtByDeckId = new Map(
-        deckProgress.flatMap(({ deckId, progress: deck }) =>
-          deck?.completedAt ? [[deckId, deck.completedAt] as const] : [],
-        ),
-      );
+      const badgeByWorldId = new Map(earnedBadges.map((badge) => [badge.worldId, badge]));
 
       const recentDiscoveries = collected
         .map(({ discoveryId, collectedAt }) => {
@@ -132,17 +122,17 @@ export function useParentProgress() {
         .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt))
         .slice(0, 4);
 
-      const badges = [...completedAtByDeckId.entries()]
-        .map(([deckId, earnedAt]) => {
-          const entry = entryByDeckId.get(deckId);
+      const badges = [...badgeByWorldId.entries()]
+        .map(([worldId, badge]): ParentBadgeSummary | null => {
+          const entry = deckContent.find(({ category }) => category.id === worldId);
           return entry
             ? {
-                deckId,
+                deckId: entry.deck.id,
                 worldId: entry.category.id,
                 worldTitle: entry.category.title,
                 title: entry.deck.rewardBadge.label,
                 icon: entry.deck.rewardBadge.icon,
-                earnedAt,
+                earnedAt: badge.earnedAt,
               }
             : null;
         })

@@ -22,6 +22,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
     category,
     deck,
     deckProgress,
+    worldBadge,
     discoveries,
     collectionPreview,
     nextDiscovery,
@@ -38,7 +39,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
   const discoveredCount = deckProgress?.completedDiscoveryIds.length ?? 0;
   const worldName = (category?.title ?? theme.label).replace(' World', '');
   const worldTitle = category?.title ?? theme.label;
-  const worldCompleted = Boolean(deckProgress?.completedAt);
+  const worldCompleted = Boolean(worldBadge);
   const actionLabel = worldCompleted
     ? `VISIT MY ${worldName.toLocaleUpperCase()} DISCOVERIES`
     : discoveredCount > 0 && nextDiscovery

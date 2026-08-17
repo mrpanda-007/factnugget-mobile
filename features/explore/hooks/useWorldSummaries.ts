@@ -54,20 +54,20 @@ export function useWorldSummaries() {
             };
           }
 
-          const [deckProgress, discoveries] = await Promise.all([
+          const [deckProgress, discoveries, badge] = await Promise.all([
             ProgressRepository.getDeckProgress(deck.id),
             ContentRepository.getDiscoveriesForDeck(deck.id),
+            ProgressRepository.getWorldBadge(category.id),
           ]);
           const discoveriesFound = deckProgress?.completedDiscoveryIds.length ?? 0;
           const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
           const nextDiscovery = discoveries.find((discovery) => !completedIds.has(discovery.id));
           const total = deck.discoveryIds.length;
-          const status: WorldStatus =
-            total > 0 && discoveriesFound >= total
-              ? 'completed'
-              : discoveriesFound > 0 || deckProgress
-                ? 'in_progress'
-                : 'not_started';
+          const status: WorldStatus = badge
+            ? 'completed'
+            : discoveriesFound > 0 || deckProgress
+              ? 'in_progress'
+              : 'not_started';
           return {
             category,
             deck,
