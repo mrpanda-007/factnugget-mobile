@@ -10,6 +10,7 @@ export type DiscoveryId = BrandedString<'DiscoveryId'>;
 export type ExplorerId = BrandedString<'ExplorerId'>;
 export type ContentSlug = BrandedString<'ContentSlug'>;
 export type CommerceKey = BrandedString<'CommerceKey'>;
+export type PlatformProductId = BrandedString<'PlatformProductId'>;
 export type EntitlementId = BrandedString<'EntitlementId'>;
 
 export const CONTENT_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
@@ -62,6 +63,17 @@ export function parseContentSlug(value: string): ContentSlug {
  */
 export function parseCommerceKey(value: string): CommerceKey {
   return parseContentId<CommerceKey>(value, 'Commerce key');
+}
+
+/**
+ * A platform-store identifier is intentionally not constrained to CommerceKey
+ * syntax: Apple and Google use different product-ID formats.
+ */
+export function parsePlatformProductId(value: string): PlatformProductId {
+  if (value.trim().length === 0 || /\s/.test(value)) {
+    throw new Error('Platform product ID must be a non-empty string without whitespace.');
+  }
+  return value as PlatformProductId;
 }
 
 export function parseEntitlementId(value: string): EntitlementId {

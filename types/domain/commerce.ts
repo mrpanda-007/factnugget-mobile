@@ -1,4 +1,4 @@
-import type { CommerceKey, EntitlementId, LearningPackId } from './ids';
+import type { CommerceKey, EntitlementId, LearningPackId, PlatformProductId } from './ids';
 
 export type EntitlementSource = 'apple' | 'google' | 'development';
 export type EntitlementStatus = 'active' | 'revoked' | 'expired' | 'unknown';
@@ -26,7 +26,7 @@ export type LearningPackAccessDecision =
 
 export interface StoreProduct {
   commerceKey: CommerceKey;
-  platformProductId: string;
+  platformProductId: PlatformProductId;
   localizedPrice: string;
   currencyCode: string | null;
   title: string | null;

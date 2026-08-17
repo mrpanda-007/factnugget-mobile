@@ -1,4 +1,5 @@
 import { getLearningPackIdForCommerceKey } from '../../commerce/catalogue';
+import { getCurrentPlatformProductId } from '../../commerce/currentPlatform';
 import { LegacyContentRepositoryAdapter } from '@repositories/adapters/LegacyContentRepositoryAdapter';
 import { SQLiteEntitlementRepository } from '@repositories/adapters/SQLiteEntitlementRepository';
 import type {
@@ -24,11 +25,13 @@ export function resolveCommerceEnvironment(
 }
 
 class UnavailablePurchaseProvider implements PurchaseProviderContract {
-  async loadStoreProducts(_commerceKeys: readonly CommerceKey[]): Promise<StoreProduct[]> {
+  async loadStoreProducts(commerceKeys: readonly CommerceKey[]): Promise<StoreProduct[]> {
+    commerceKeys.forEach(getCurrentPlatformProductId);
     return [];
   }
 
-  async purchase(_commerceKey: CommerceKey): Promise<PurchaseResult> {
+  async purchase(commerceKey: CommerceKey): Promise<PurchaseResult> {
+    getCurrentPlatformProductId(commerceKey);
     return { state: 'failed', message: 'Purchases are not available in this build.' };
   }
 

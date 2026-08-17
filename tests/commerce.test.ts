@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { decideLearningPackAccess } from '../application/commerce/accessDecision';
-import { CommerceService } from '../application/commerce/CommerceService';
+import {
+  CommerceService,
+  getCommerceKeyForPaidLearningPack,
+} from '../application/commerce/CommerceService';
 import { LearningPackAccessService } from '../application/commerce/LearningPackAccessService';
+import {
+  getCommerceProductConfig,
+  getPlatformProductId,
+  hasCommerceMapping,
+  listConfiguredCommerceKeys,
+  validateCommerceCatalogue,
+} from '../commerce/catalogue';
 import type { Entitlement, PurchaseResult } from '../types/domain/commerce';
 import type { LearningPack } from '../types/domain/content';
 import {
@@ -87,6 +97,38 @@ describe('Phase 8 commerce foundation', () => {
     ).toMatchObject({ state: 'accessible', reason: 'free' });
   });
 
+  it('bypasses commerce for free Packs and fails clearly for a paid Pack missing its key', () => {
+    expect(getCommerceKeyForPaidLearningPack(oceanPack)).toBeUndefined();
+    expect(() =>
+      getCommerceKeyForPaidLearningPack({ ...spacePack, commerceKey: undefined }),
+    ).toThrow('Paid Learning Pack is missing a CommerceKey');
+  });
+
+  it('maps Space to planned iOS and Android product IDs without putting them on content', () => {
+    const commerceKey = parseCommerceKey('space-adventures-one-time');
+    expect(getPlatformProductId(commerceKey, 'ios')).toBe('com.factnuggets.pack.space_adventures');
+    expect(getPlatformProductId(commerceKey, 'android')).toBe('pack_space_adventures');
+    expect(getCommerceProductConfig(commerceKey)?.commerceKey).toBe(commerceKey);
+    expect(hasCommerceMapping(commerceKey)).toBe(true);
+    expect(listConfiguredCommerceKeys()).toEqual([commerceKey]);
+    expect(spacePack).not.toHaveProperty('platformProductId');
+  });
+
+  it('fails closed for missing mappings and unsupported platforms', () => {
+    expect(() => getPlatformProductId(parseCommerceKey('missing-pack-one-time'), 'ios')).toThrow(
+      'No commerce product mapping',
+    );
+    expect(() =>
+      getPlatformProductId(parseCommerceKey('space-adventures-one-time'), 'web'),
+    ).toThrow('Unsupported commerce platform');
+  });
+
+  it('validates duplicate catalogue configuration before a provider can use it', () => {
+    const commerceKey = parseCommerceKey('space-adventures-one-time');
+    const entry = getCommerceProductConfig(commerceKey)!;
+    expect(() => validateCommerceCatalogue([entry, entry])).toThrow('Duplicate CommerceKey');
+  });
+
   it('locks paid Packs without an active entitlement, then grants active access', () => {
     const policy = { allowedSources: ['apple', 'google'] as const, now: () => now };
     expect(decideLearningPackAccess(spacePack, [], policy)).toMatchObject({
@@ -156,7 +198,7 @@ describe('Phase 8 commerce foundation', () => {
       (commerceKey) => (commerceKey === 'space-adventures-one-time' ? spacePack.id : undefined),
       () => now,
     );
-    expect(await commerce.purchaseLearningPack(spacePack.id)).toEqual({ state: 'cancelled' });
+    expect(await commerce.purchase(spacePack.commerceKey!)).toEqual({ state: 'cancelled' });
     expect(await entitlements.listEntitlements()).toEqual([]);
   });
 });

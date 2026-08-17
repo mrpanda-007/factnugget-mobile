@@ -1,11 +1,12 @@
-import { getCommerceKeyForLearningPack } from '../../commerce/catalogue';
+import { getCommerceProductConfig } from '../../commerce/catalogue';
 import type {
   Entitlement,
   PurchaseResult,
   ReconciledPurchase,
   StoreProduct,
 } from '@app-types/domain/commerce';
-import { createEntitlementId, type LearningPackId } from '@app-types/domain/ids';
+import { createEntitlementId, type CommerceKey, type LearningPackId } from '@app-types/domain/ids';
+import type { LearningPack } from '@app-types/domain/content';
 import type { EntitlementRepositoryContract } from '@repositories/contracts/EntitlementRepositoryContract';
 import type { PurchaseProviderContract } from '@repositories/contracts/PurchaseProviderContract';
 
@@ -18,25 +19,29 @@ export class CommerceService {
     private readonly provider: PurchaseProviderContract,
     private readonly entitlements: EntitlementRepositoryContract,
     private readonly learningPackIdForCommerceKey: (
-      commerceKey: string,
+      commerceKey: CommerceKey,
     ) => LearningPackId | undefined,
     private readonly now: () => string = () => new Date().toISOString(),
   ) {}
 
-  async resolveStoreProduct(learningPackId: LearningPackId): Promise<StoreProduct | null> {
-    const commerceKey = getCommerceKeyForLearningPack(learningPackId);
-    if (!commerceKey) return null;
+  async resolveStoreProduct(commerceKey: CommerceKey): Promise<StoreProduct | null> {
+    this.requireConfiguredProduct(commerceKey);
     return (await this.provider.loadStoreProducts([commerceKey]))[0] ?? null;
   }
 
-  async purchaseLearningPack(learningPackId: LearningPackId): Promise<PurchaseResult> {
-    const commerceKey = getCommerceKeyForLearningPack(learningPackId);
-    if (!commerceKey) return { state: 'failed', message: 'This Learning Pack is not purchasable.' };
+  async purchase(commerceKey: CommerceKey): Promise<PurchaseResult> {
+    this.requireConfiguredProduct(commerceKey);
     const result = await this.provider.purchase(commerceKey);
     if (result.state === 'success' || result.state === 'already-owned') {
       await this.reconcileOwnedPurchases();
     }
     return result;
+  }
+
+  private requireConfiguredProduct(commerceKey: CommerceKey): void {
+    if (!getCommerceProductConfig(commerceKey)) {
+      throw new Error(`No commerce product mapping configured for CommerceKey: ${commerceKey}`);
+    }
   }
 
   async restoreEntitlements(): Promise<Entitlement[]> {
@@ -70,4 +75,18 @@ export class CommerceService {
     }
     return stored;
   }
+}
+
+/**
+ * Converts canonical Pack metadata into a commerce capability at the boundary
+ * before native product lookup. Free Packs bypass commerce entirely.
+ */
+export function getCommerceKeyForPaidLearningPack(
+  learningPack: LearningPack,
+): CommerceKey | undefined {
+  if (learningPack.accessType === 'free') return undefined;
+  if (!learningPack.commerceKey) {
+    throw new Error(`Paid Learning Pack is missing a CommerceKey: ${learningPack.id}`);
+  }
+  return learningPack.commerceKey;
 }
