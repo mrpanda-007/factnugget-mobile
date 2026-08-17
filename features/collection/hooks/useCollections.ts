@@ -3,6 +3,8 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import * as ContentRepository from '@repositories/ContentRepository';
 import * as ProgressRepository from '@repositories/ProgressRepository';
+import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
+import { parseLearningPackId } from '@app-types/domain/ids';
 import type { CollectedDiscovery } from '@app-types/Progress';
 import type { CollectionsState, ExplorerCollection } from '@features/collection/types';
 
@@ -60,10 +62,14 @@ export function useCollections() {
           const decks = await ContentRepository.getDecksForCategory(category.id);
           return Promise.all(
             decks.map(async (deck): Promise<ExplorerCollection> => {
+              const access = await getLearningPackAccessService().getLearningPackAccess(
+                parseLearningPackId(deck.id),
+              );
+              const locked = access.state !== 'allowed';
               const [discoveries, progress, badge] = await Promise.all([
                 ContentRepository.getDiscoveriesForDeck(deck.id),
-                ProgressRepository.getDeckProgress(deck.id),
-                ProgressRepository.getWorldBadge(category.id),
+                locked ? Promise.resolve(null) : ProgressRepository.getDeckProgress(deck.id),
+                locked ? Promise.resolve(null) : ProgressRepository.getWorldBadge(category.id),
               ]);
               const discoveredIds = new Set(
                 discoveries.filter((item) => collectedById.has(item.id)).map((item) => item.id),
@@ -76,7 +82,7 @@ export function useCollections() {
                 }));
               const totalCount = Math.max(deck.discoveryIds.length, discoveries.length);
               const discoveredCount = discoveredIds.size;
-              const status = !deck.isFree
+              const status = locked
                 ? 'locked'
                 : badge
                   ? 'completed'

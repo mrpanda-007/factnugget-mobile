@@ -1,4 +1,4 @@
-import type { ContentSlug, DiscoveryId, LearningPackId, WorldId } from './ids';
+import type { CommerceKey, ContentSlug, DiscoveryId, LearningPackId, WorldId } from './ids';
 
 export type ContentLifecycle = 'published' | 'retired';
 export type ContentAccessType = 'free' | 'paid';
@@ -36,6 +36,8 @@ export interface LearningPack {
   subtitle: string;
   sortOrder: number;
   accessType: ContentAccessType;
+  /** Required only when a paid Pack is connected to commerce. Never a store product ID. */
+  commerceKey?: CommerceKey;
   completionRole: CompletionRole;
   lifecycle: ContentLifecycle;
   revision: string;

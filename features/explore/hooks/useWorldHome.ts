@@ -8,6 +8,8 @@ import type { Deck } from '@app-types/Deck';
 import type { Discovery } from '@app-types/Discovery';
 import type { DeckProgress } from '@app-types/Progress';
 import type { EarnedBadge } from '@app-types/domain/progress';
+import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
+import { parseLearningPackId } from '@app-types/domain/ids';
 
 interface WorldHomeState {
   isLoading: boolean;
@@ -18,6 +20,7 @@ interface WorldHomeState {
   discoveries: Discovery[];
   collectionPreview: Discovery[];
   nextDiscovery: Discovery | null;
+  accessState: 'loading' | 'allowed' | 'locked' | 'unavailable';
 }
 
 const initialState: WorldHomeState = {
@@ -29,6 +32,7 @@ const initialState: WorldHomeState = {
   discoveries: [],
   collectionPreview: [],
   nextDiscovery: null,
+  accessState: 'loading',
 };
 
 /**
@@ -43,12 +47,23 @@ export function useWorldHome(worldId: WorldId) {
   const [state, setState] = useState<WorldHomeState>(initialState);
 
   const load = useCallback(async () => {
-    const [category, decks, collected] = await Promise.all([
+    const [category, decks] = await Promise.all([
       ContentRepository.getCategory(worldId),
       ContentRepository.getDecksForCategory(worldId),
-      ProgressRepository.getCollection(),
     ]);
     const deck = decks[0] ?? null;
+    if (!deck) {
+      setState({ ...initialState, isLoading: false, category, accessState: 'unavailable' });
+      return;
+    }
+    const access = await getLearningPackAccessService().getLearningPackAccess(
+      parseLearningPackId(deck.id),
+    );
+    if (access.state !== 'allowed') {
+      setState({ ...initialState, isLoading: false, category, deck, accessState: 'locked' });
+      return;
+    }
+    const collected = await ProgressRepository.getCollection();
     const [deckProgress, discoveries, worldBadge] = deck
       ? await Promise.all([
           ProgressRepository.getDeckProgress(deck.id),
@@ -82,6 +97,7 @@ export function useWorldHome(worldId: WorldId) {
       discoveries,
       collectionPreview,
       nextDiscovery,
+      accessState: 'allowed',
     });
   }, [worldId]);
 

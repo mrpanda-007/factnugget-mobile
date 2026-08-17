@@ -20,6 +20,7 @@ import {
   type WorldId,
 } from '../../types/domain/ids';
 import * as LegacyContentRepository from '../ContentRepository';
+import { getCommerceKeyForLearningPack } from '../../commerce/catalogue';
 
 interface LegacyContentSource {
   getCategories(): Promise<Category[]>;
@@ -59,6 +60,9 @@ function toLearningPack(deck: Deck): LearningPack {
     subtitle: deck.subtitle,
     sortOrder: deck.displayOrder,
     accessType: deck.isFree ? 'free' : 'paid',
+    commerceKey: deck.isFree
+      ? undefined
+      : getCommerceKeyForLearningPack(parseLearningPackId(deck.id)),
     completionRole: 'required',
     lifecycle: 'published',
     revision: deck.version,

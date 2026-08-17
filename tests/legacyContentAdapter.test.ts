@@ -32,4 +32,13 @@ describe('legacy content compatibility adapter', () => {
     expect(packDiscoveries[0].discovery).not.toHaveProperty('displayOrder');
     expect(packDiscoveries[0].discovery).not.toHaveProperty('stickerReward');
   });
+
+  it('maps the approved Space Pack to an engineering commerce key only', async () => {
+    const pack = await repository.getLearningPack(parseLearningPackId('space-adventures'));
+    expect(pack).toMatchObject({
+      accessType: 'paid',
+      commerceKey: 'space-adventures-one-time',
+    });
+    expect(pack).not.toHaveProperty('platformProductId');
+  });
 });

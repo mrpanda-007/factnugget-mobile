@@ -4,6 +4,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { WorldId } from '@constants/tokens';
 import * as ContentRepository from '@repositories/ContentRepository';
 import * as ProgressRepository from '@repositories/ProgressRepository';
+import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
+import { parseLearningPackId } from '@app-types/domain/ids';
 import type { Category } from '@app-types/Category';
 import type { Deck } from '@app-types/Deck';
 import type { Discovery } from '@app-types/Discovery';
@@ -90,6 +92,18 @@ export function useParentProgress() {
           discoveries: await ContentRepository.getDiscoveriesForDeck(deck.id),
         })),
       );
+      const lockedPackIds = new Set(
+        (
+          await Promise.all(
+            deckContent.map(async ({ deck }) => {
+              const access = await getLearningPackAccessService().getLearningPackAccess(
+                parseLearningPackId(deck.id),
+              );
+              return access.state === 'allowed' ? null : deck.id;
+            }),
+          )
+        ).filter((deckId): deckId is string => deckId !== null),
+      );
       const [collected, earnedBadges] = await Promise.all([
         ProgressRepository.getCollection(),
         ProgressRepository.getEarnedBadges(),
@@ -147,7 +161,7 @@ export function useParentProgress() {
           recentDiscoveries,
           badges,
           lockedPacks: deckContent
-            .filter(({ deck }) => !deck.isFree)
+            .filter(({ deck }) => lockedPackIds.has(deck.id))
             .map(({ deck }) => ({
               deckId: deck.id,
               title: deck.title,

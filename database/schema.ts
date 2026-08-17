@@ -35,6 +35,26 @@ export const migrations: Migration[] = [
       );`,
     ],
   },
+  {
+    version: 3,
+    statements: [
+      `CREATE TABLE local_entitlements (
+        id TEXT PRIMARY KEY,
+        subject_type TEXT NOT NULL CHECK (subject_type = 'learningPack'),
+        subject_id TEXT NOT NULL,
+        source TEXT NOT NULL CHECK (source IN ('apple', 'google', 'development')),
+        status TEXT NOT NULL CHECK (status IN ('active', 'revoked', 'expired', 'unknown')),
+        granted_at TEXT NOT NULL,
+        expires_at TEXT NULL,
+        last_verified_at TEXT NULL,
+        source_reference_hash TEXT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (subject_type, subject_id, source)
+      );`,
+      'CREATE INDEX local_entitlements_subject_status_idx ON local_entitlements (subject_type, subject_id, status);',
+      'CREATE INDEX local_entitlements_last_verified_idx ON local_entitlements (last_verified_at);',
+    ],
+  },
 ];
 
 /** v2 renames the incompatible v1 discovery table before creating its replacement. */

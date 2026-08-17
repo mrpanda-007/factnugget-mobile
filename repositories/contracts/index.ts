@@ -4,3 +4,4 @@ export type {
   LearningPackAccess,
 } from './EntitlementRepositoryContract';
 export type { ProgressRepositoryContract } from './ProgressRepositoryContract';
+export type { PurchaseProviderContract } from './PurchaseProviderContract';

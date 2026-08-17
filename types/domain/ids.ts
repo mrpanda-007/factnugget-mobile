@@ -9,6 +9,8 @@ export type LearningPackId = BrandedString<'LearningPackId'>;
 export type DiscoveryId = BrandedString<'DiscoveryId'>;
 export type ExplorerId = BrandedString<'ExplorerId'>;
 export type ContentSlug = BrandedString<'ContentSlug'>;
+export type CommerceKey = BrandedString<'CommerceKey'>;
+export type EntitlementId = BrandedString<'EntitlementId'>;
 
 export const CONTENT_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
@@ -54,6 +56,21 @@ export function parseContentSlug(value: string): ContentSlug {
   return value as ContentSlug;
 }
 
+/**
+ * An engineering-owned identifier for a purchasable capability. It is intentionally
+ * separate from editorial IDs/slugs and from future platform product IDs.
+ */
+export function parseCommerceKey(value: string): CommerceKey {
+  return parseContentId<CommerceKey>(value, 'Commerce key');
+}
+
+export function parseEntitlementId(value: string): EntitlementId {
+  if (!UUID_PATTERN.test(value)) {
+    throw new Error('Entitlement ID must be a UUID.');
+  }
+  return value as EntitlementId;
+}
+
 function fillRandomBytes(bytes: Uint8Array<ArrayBuffer>): void {
   const cryptoProvider = globalThis.crypto;
   if (cryptoProvider?.getRandomValues) {
@@ -68,13 +85,22 @@ function fillRandomBytes(bytes: Uint8Array<ArrayBuffer>): void {
 
 /** Creates a local, opaque Explorer identity. It never derives from a look, device, or name. */
 export function createExplorerId(): ExplorerId {
+  return createOpaqueUuid(parseExplorerId);
+}
+
+/** Creates a local opaque record ID; it never contains store transaction data. */
+export function createEntitlementId(): EntitlementId {
+  return createOpaqueUuid(parseEntitlementId);
+}
+
+function createOpaqueUuid<Id extends string>(parse: (value: string) => Id): Id {
   const bytes = new Uint8Array(new ArrayBuffer(16));
   fillRandomBytes(bytes);
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return parseExplorerId(
+  return parse(
     `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`,
   );
 }

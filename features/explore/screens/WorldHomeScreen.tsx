@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
     discoveries,
     collectionPreview,
     nextDiscovery,
+    accessState,
     refresh,
   } = useWorldHome(worldId);
 
@@ -34,6 +35,22 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
       refresh();
     }, [refresh]),
   );
+
+  useEffect(() => {
+    if (accessState !== 'locked' || !deck) return;
+    navigation.navigate('Parent', {
+      screen: 'Area',
+      params: {
+        deckId: deck.id,
+        requestedPackTitle: deck.title,
+        requestId: String(Date.now()),
+      },
+    });
+  }, [accessState, deck, navigation]);
+
+  if (accessState !== 'allowed') {
+    return <View className="flex-1 bg-cream" />;
+  }
 
   const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
   const discoveredCount = deckProgress?.completedDiscoveryIds.length ?? 0;

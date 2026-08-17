@@ -116,6 +116,8 @@ async function migrateV2(db: SQLiteDatabase): Promise<void> {
 export interface DatabaseInitializationOptions {
   /** Development-harness hook used to prove transaction rollback. */
   beforeVersionTwoCommit?: () => Promise<void> | void;
+  /** Development-harness hook used to prove V3 entitlement migration rollback. */
+  beforeVersionThreeCommit?: () => Promise<void> | void;
 }
 
 export async function initializeDatabase(
@@ -125,14 +127,14 @@ export async function initializeDatabase(
   await db.execAsync('PRAGMA foreign_keys = ON;');
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
   const currentVersion = versionRow?.user_version ?? 0;
-  if (currentVersion > 2)
+  if (currentVersion > 3)
     throw new Error(`Database version ${currentVersion} is newer than this app supports.`);
 
   await db.withTransactionAsync(async () => {
-    const pending = migrations
-      .filter((migration) => migration.version > currentVersion)
+    const pendingBeforeV2 = migrations
+      .filter((migration) => migration.version > currentVersion && migration.version < 2)
       .sort((a, b) => a.version - b.version);
-    for (const migration of pending) {
+    for (const migration of pendingBeforeV2) {
       await db.execAsync(migration.statements.join('\n'));
       await db.execAsync(`PRAGMA user_version = ${migration.version};`);
     }
@@ -140,6 +142,14 @@ export async function initializeDatabase(
       await migrateV2(db);
       await options.beforeVersionTwoCommit?.();
       await db.execAsync('PRAGMA user_version = 2;');
+    }
+    const pendingAfterV2 = migrations
+      .filter((migration) => migration.version > Math.max(currentVersion, 2))
+      .sort((a, b) => a.version - b.version);
+    for (const migration of pendingAfterV2) {
+      await db.execAsync(migration.statements.join('\n'));
+      if (migration.version === 3) await options.beforeVersionThreeCommit?.();
+      await db.execAsync(`PRAGMA user_version = ${migration.version};`);
     }
   });
 }

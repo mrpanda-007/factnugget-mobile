@@ -221,14 +221,14 @@ async function runValidation(): Promise<Result[]> {
     }
   };
 
-  await scenario('Fresh v2 schema', async () => {
+  await scenario('Fresh latest schema', async () => {
     const db = await resetDatabase();
     await initializeDatabase(db);
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
     const tables = await db.getAllAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table';",
     );
-    expect(version?.user_version === 2, 'schema version is not 2');
+    expect(version?.user_version === 3, 'schema version is not 3');
     for (const table of [
       'local_explorers',
       'device_settings',
@@ -236,6 +236,7 @@ async function runValidation(): Promise<Result[]> {
       'pack_discovery_progress',
       'learning_pack_progress',
       'earned_badges',
+      'local_entitlements',
       'stickers',
     ])
       expect(
@@ -360,7 +361,7 @@ async function runValidation(): Promise<Result[]> {
     await initializeDatabase(db);
     expect(
       (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;'))?.user_version ===
-        2,
+        3,
       'retry did not migrate',
     );
     await db.closeAsync();

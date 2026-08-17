@@ -6,6 +6,7 @@ import { worldThemes } from '@constants/tokens';
 import * as ContentRepository from '@repositories/ContentRepository';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import { getDiscoveryProgressService } from '../../../application/discoveryProgressRuntime';
+import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
 import { parseDiscoveryId, parseLearningPackId } from '@app-types/domain/ids';
 import { useExplorerStore } from '@store/useExplorerStore';
 import type { Deck } from '@app-types/Deck';
@@ -31,12 +32,33 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [deckResult, discoveryResults, progress] = await Promise.all([
+      const [deckResult, access] = await Promise.all([
         ContentRepository.getDeck(deckId),
+        getLearningPackAccessService().getLearningPackAccess(parseLearningPackId(deckId)),
+      ]);
+      if (cancelled) return;
+
+      if (access.state !== 'allowed') {
+        if (deckResult) {
+          navigation.navigate('Parent', {
+            screen: 'Area',
+            params: {
+              deckId: deckResult.id,
+              requestedPackTitle: deckResult.title,
+              requestId: String(Date.now()),
+            },
+          });
+        } else {
+          navigation.goBack();
+        }
+        return;
+      }
+
+      const [discoveryResults, progress] = await Promise.all([
         ContentRepository.getDiscoveriesForDeck(deckId),
         ProgressRepository.getDeckProgress(deckId),
-        ProgressRepository.startOrTouchDeck(deckId),
       ]);
+      await ProgressRepository.startOrTouchDeck(deckId);
       if (cancelled) return;
 
       const completed = new Set(progress?.completedDiscoveryIds ?? []);

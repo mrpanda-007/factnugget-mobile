@@ -17,8 +17,11 @@ import { RootNavigator } from '@navigation/RootNavigator';
 import { useExplorerStore } from '@store/useExplorerStore';
 import { useUIStore } from '@store/useUIStore';
 import { Phase7SQLiteValidationScreen } from '@features/dev/Phase7SQLiteValidationScreen';
+import { Phase8CommerceValidationScreen } from '@features/dev/Phase8CommerceValidationScreen';
 
 const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
+const showPhase8Validation =
+  __DEV__ && process.env.EXPO_PUBLIC_PHASE8_COMMERCE_VALIDATION === 'true';
 
 /**
  * App-level composition root (docs/implementation/02-folder-structure.md).
@@ -31,6 +34,7 @@ const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VA
  */
 export default function App() {
   if (showPhase7Validation) return <Phase7SQLiteValidationScreen />;
+  if (showPhase8Validation) return <Phase8CommerceValidationScreen />;
   return <FactNuggetsApp />;
 }
 

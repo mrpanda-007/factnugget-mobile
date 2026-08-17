@@ -3,6 +3,8 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import * as ContentRepository from '@repositories/ContentRepository';
 import * as ProgressRepository from '@repositories/ProgressRepository';
+import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
+import { parseLearningPackId } from '@app-types/domain/ids';
 import type { Category } from '@app-types/Category';
 import type { Deck } from '@app-types/Deck';
 
@@ -40,7 +42,10 @@ export function useWorldSummaries() {
           const deck = decks[0];
           if (!deck) return null;
 
-          if (!deck.isFree) {
+          const access = await getLearningPackAccessService().getLearningPackAccess(
+            parseLearningPackId(deck.id),
+          );
+          if (access.state !== 'allowed') {
             return {
               category,
               deck,

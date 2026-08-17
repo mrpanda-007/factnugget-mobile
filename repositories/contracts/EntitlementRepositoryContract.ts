@@ -1,12 +1,16 @@
+import type { Entitlement, LearningPackAccessDecision } from '../../types/domain/commerce';
 import type { LearningPack } from '../../types/domain/content';
-import type { ExplorerId } from '../../types/domain/ids';
+import type { LearningPackId } from '../../types/domain/ids';
 
-export type LearningPackAccess = 'accessible' | 'locked';
+export type LearningPackAccess = LearningPackAccessDecision;
 
-/** Product boundary only. Purchase providers and transaction state are deliberately deferred. */
+/**
+ * Installation/store-scoped access cache. Explorer progress deliberately does
+ * not participate in this contract.
+ */
 export interface EntitlementRepositoryContract {
-  getLearningPackAccess(
-    explorerId: ExplorerId,
-    learningPack: LearningPack,
-  ): Promise<LearningPackAccess>;
+  getLearningPackAccess(learningPack: LearningPack): Promise<LearningPackAccess>;
+  listEntitlements(): Promise<Entitlement[]>;
+  getEntitlementsForLearningPack(learningPackId: LearningPackId): Promise<Entitlement[]>;
+  upsertEntitlement(entitlement: Entitlement): Promise<Entitlement>;
 }
