@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function memberPath(familyId) {
+      return /databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid);
+    }
+
+    function isFamilyMember(familyId) {
+      return signedIn() && exists(memberPath(familyId));
+    }
+
+    function isUuid(value) {
+      return value is string && value.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$');
+    }
+
+    function isContentId(value) {
+      return value is string && value.matches('^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$');
+    }
+
+    function isTimestamp(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$');
+    }
+
+    function exactKeys(required) {
+      return request.resource.data.keys().hasAll(required) &&
+        request.resource.data.keys().hasOnly(required);
+    }
+
+    function validFamily(familyId) {
+      return exactKeys(['familyId', 'createdAt', 'schemaVersion']) &&
+        request.resource.data.familyId == familyId && isUuid(familyId) &&
+        isTimestamp(request.resource.data.createdAt) && request.resource.data.schemaVersion == 1;
+    }
+
+    function validExplorer(explorerId) {
+      return exactKeys(['explorerId', 'lookId', 'createdAt', 'schemaVersion']) &&
+        request.resource.data.explorerId == explorerId && isUuid(explorerId) &&
+        request.resource.data.lookId in ['animal', 'space', 'ocean', 'world'] &&
+        isTimestamp(request.resource.data.createdAt) && request.resource.data.schemaVersion == 1;
+    }
+
+    function validDiscovery(explorerId, discoveryId) {
+      return exactKeys(['explorerId', 'discoveryId', 'revealedAt', 'collectedAt', 'schemaVersion']) &&
+        request.resource.data.explorerId == explorerId && request.resource.data.discoveryId == discoveryId &&
+        isUuid(explorerId) && isContentId(discoveryId) &&
+        (request.resource.data.revealedAt == null || isTimestamp(request.resource.data.revealedAt)) &&
+        (request.resource.data.collectedAt == null || isTimestamp(request.resource.data.collectedAt)) &&
+        request.resource.data.schemaVersion == 1;
+    }
+
+    function validPackDiscovery(explorerId, compoundId) {
+      return exactKeys(['explorerId', 'learningPackId', 'discoveryId', 'revealedAt', 'completedAt', 'schemaVersion']) &&
+        request.resource.data.explorerId == explorerId &&
+        compoundId == request.resource.data.learningPackId + '__' + request.resource.data.discoveryId &&
+        isUuid(explorerId) && isContentId(request.resource.data.learningPackId) &&
+        isContentId(request.resource.data.discoveryId) &&
+        (request.resource.data.revealedAt == null || isTimestamp(request.resource.data.revealedAt)) &&
+        (request.resource.data.completedAt == null || isTimestamp(request.resource.data.completedAt)) &&
+        request.resource.data.schemaVersion == 1;
+    }
+
+    function validLearningPack(explorerId, learningPackId) {
+      return exactKeys(['explorerId', 'learningPackId', 'startedAt', 'lastViewedAt', 'completedAt', 'completionRevision', 'schemaVersion']) &&
+        request.resource.data.explorerId == explorerId && request.resource.data.learningPackId == learningPackId &&
+        isUuid(explorerId) && isContentId(learningPackId) &&
+        isTimestamp(request.resource.data.startedAt) && isTimestamp(request.resource.data.lastViewedAt) &&
+        (request.resource.data.completedAt == null || isTimestamp(request.resource.data.completedAt)) &&
+        (request.resource.data.completionRevision == null || request.resource.data.completionRevision is string) &&
+        request.resource.data.schemaVersion == 1;
+    }
+
+    function validBadge(explorerId, worldId) {
+      return exactKeys(['explorerId', 'worldId', 'earnedAt', 'contentRevision', 'schemaVersion']) &&
+        request.resource.data.explorerId == explorerId && request.resource.data.worldId == worldId &&
+        isUuid(explorerId) && isContentId(worldId) && isTimestamp(request.resource.data.earnedAt) &&
+        (request.resource.data.contentRevision == null || request.resource.data.contentRevision is string) &&
+        request.resource.data.schemaVersion == 1;
+    }
+
+    match /families/{familyId} {
+      allow read: if isFamilyMember(familyId);
+      allow create, update, delete: if false; // Family bootstrap is privileged/deferred to Phase 9F.
+
+      match /members/{memberId} {
+        allow read: if signedIn() && (memberId == request.auth.uid || isFamilyMember(familyId));
+        allow create, update, delete: if false; // No self-enrollment or role mutation.
+      }
+
+      match /explorers/{explorerId} {
+        allow read: if isFamilyMember(familyId);
+        allow create: if isFamilyMember(familyId) && validExplorer(explorerId);
+        allow update: if isFamilyMember(familyId) && validExplorer(explorerId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lookId']);
+        allow delete: if false;
+
+        match /discoveryProgress/{discoveryId} {
+          allow read: if isFamilyMember(familyId);
+          allow create, update: if isFamilyMember(familyId) && validDiscovery(explorerId, discoveryId);
+          allow delete: if false;
+        }
+        match /packDiscoveryProgress/{compoundId} {
+          allow read: if isFamilyMember(familyId);
+          allow create, update: if isFamilyMember(familyId) && validPackDiscovery(explorerId, compoundId);
+          allow delete: if false;
+        }
+        match /learningPackProgress/{learningPackId} {
+          allow read: if isFamilyMember(familyId);
+          allow create, update: if isFamilyMember(familyId) && validLearningPack(explorerId, learningPackId);
+          allow delete: if false;
+        }
+        match /badges/{worldId} {
+          allow read: if isFamilyMember(familyId);
+          allow create, update: if isFamilyMember(familyId) && validBadge(explorerId, worldId);
+          allow delete: if false;
+        }
+      }
+    }
+  }
+}

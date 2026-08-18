@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { ParentAccountService } from '../application/sync/ParentAccountService';
-import { getFirebaseAvailability } from '../infrastructure/firebase/firebaseConfig';
+import {
+  getFirebaseAvailability,
+  getFirebaseEmulatorConfig,
+} from '../infrastructure/firebase/firebaseConfig';
 import {
   FirebaseParentAuthRepository,
   normalizeFirebaseAuthError,
@@ -87,6 +90,30 @@ function firebaseUser(): User {
 describe('Phase 9C parent Auth foundation', () => {
   it('fails closed when Firebase client configuration is absent', () => {
     expect(getFirebaseAvailability({})).toEqual({ state: 'notConfigured' });
+  });
+
+  it('enables emulator routing only for explicit development configuration', () => {
+    expect(
+      getFirebaseEmulatorConfig({ EXPO_PUBLIC_FIREBASE_USE_EMULATOR: 'true' }, true),
+    ).toBeNull();
+    expect(
+      getFirebaseEmulatorConfig(
+        {
+          EXPO_PUBLIC_FIREBASE_USE_EMULATOR: 'true',
+          EXPO_PUBLIC_FIREBASE_EMULATOR_HOST: '10.0.2.2',
+        },
+        true,
+      ),
+    ).toMatchObject({ host: '10.0.2.2', authPort: 9099, firestorePort: 8080 });
+    expect(
+      getFirebaseEmulatorConfig(
+        {
+          EXPO_PUBLIC_FIREBASE_USE_EMULATOR: 'true',
+          EXPO_PUBLIC_FIREBASE_EMULATOR_HOST: '10.0.2.2',
+        },
+        false,
+      ),
+    ).toBeNull();
   });
 
   it('centralizes restoring, signed-in, and signed-out state without SQLite effects', async () => {

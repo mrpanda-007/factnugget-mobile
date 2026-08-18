@@ -33,12 +33,15 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@types/node": "^26.2.0",
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.3",
     "babel-preset-expo": "^57.0.5",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.1",
     "eslint-config-prettier": "^10.1.8",
+    "firebase-tools": "^15.27.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6",
@@ -55,6 +58,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:firestore-rules": "firebase emulators:exec --project factnuggets-phase9e --only auth,firestore \"FIRESTORE_EMULATOR_TEST=true vitest run tests/firestoreRules.test.ts\"",
     "prepare": "husky"
   },
   "lint-staged": {

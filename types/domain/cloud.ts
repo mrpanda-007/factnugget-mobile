@@ -87,8 +87,41 @@ export interface SyncOperation {
 
 export type SyncDirection = 'push' | 'pull' | 'reconcile';
 export type CloudSyncError =
-  'offline' | 'authRequired' | 'permissionDenied' | 'retryableFailure' | 'invalidRemoteData';
+  | 'offline'
+  | 'authRequired'
+  | 'permissionDenied'
+  | 'retryableFailure'
+  | 'invalidRemoteData'
+  | 'invalidLocalData'
+  | 'notFound'
+  | 'rateLimited'
+  | 'resourceExhausted'
+  | 'permanentFailure'
+  | 'unknownFailure'
+  | 'bindingMismatch'
+  | 'unbound'
+  | 'unavailable';
 export type CloudSyncResult =
-  | { state: 'success' }
-  | { state: 'partial'; error: CloudSyncError }
-  | { state: 'failure'; error: CloudSyncError };
+  | {
+      state: 'success';
+      pushed?: number;
+      pulled?: number;
+      merged?: number;
+      remainingPending?: number;
+    }
+  | {
+      state: 'partial';
+      error: CloudSyncError;
+      pushed?: number;
+      pulled?: number;
+      merged?: number;
+      remainingPending?: number;
+    }
+  | {
+      state: 'failure';
+      error: CloudSyncError;
+      pushed?: number;
+      pulled?: number;
+      merged?: number;
+      remainingPending?: number;
+    };

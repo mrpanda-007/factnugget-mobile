@@ -11,13 +11,15 @@ exploration.
 ## Future optional cloud replication
 
 Only a parent may opt into cloud replication. In bound mode, syncable local writes commit their
-canonical SQLite mutation and durable SQLite V4 outbox operation atomically. A future sync worker will deliver the latest canonical record
+canonical SQLite mutation and durable SQLite V4 outbox operation atomically. The explicit Phase 9E
+sync service delivers the latest canonical record
 as an idempotent upsert, retry retryable failures, and never block UI rendering.
 
-Remote records will be strictly validated, merged through pure monotonic merge functions, and then
-applied to SQLite. The cloud client cache is transport detail, not a replacement for SQLite. No
-cloud-first write path, Firestore direct UI access, generic dirty flags, or deletion workflow exists
-in the initial design.
+Remote records are strictly validated, merged through pure monotonic merge functions, and then
+applied to SQLite without creating an echo outbox row. Pushes use Firestore read/merge/write
+transactions, while pull reads one Explorer snapshot. The cloud client cache is memory-only transport
+detail, not a replacement for SQLite. No cloud-first write path, Firestore direct UI access,
+realtime listener, generic dirty flag, or deletion workflow exists.
 
 ## Outbox design for Phase 9D
 

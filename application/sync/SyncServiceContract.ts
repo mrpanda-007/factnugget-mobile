@@ -1,10 +1,9 @@
-import type { CloudSyncResult, SyncDirection } from '@app-types/domain/cloud';
+import type { CloudSyncResult } from '@app-types/domain/cloud';
 import type { ExplorerId } from '@app-types/domain/ids';
 
-/** Future local-first sync orchestration boundary. SQLite outbox persistence starts in Phase 9D. */
+/** Explicit local-first reconciliation boundary. It never drives UI rendering or app startup. */
 export interface SyncServiceContract {
-  syncNow(direction?: SyncDirection): Promise<CloudSyncResult>;
+  syncNow(explorerId: ExplorerId): Promise<CloudSyncResult>;
   pushPending(): Promise<CloudSyncResult>;
-  pullRemote(): Promise<CloudSyncResult>;
-  reconcileExplorer(explorerId: ExplorerId): Promise<CloudSyncResult>;
+  pullExplorer(explorerId: ExplorerId): Promise<CloudSyncResult>;
 }

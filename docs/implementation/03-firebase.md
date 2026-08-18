@@ -1,6 +1,6 @@
 # 03 — Optional Parent Accounts and Cloud Replication
 
-> Phase 9D implements optional parent Auth plus local SQLite V4 binding/outbox persistence. Firestore sync is not implemented.
+> Phase 9E implements explicit Firestore transport over the SQLite V4 binding/outbox foundation.
 
 ## Purpose and scope
 
@@ -44,9 +44,7 @@ remain their cloud identity. A family has parent memberships so the model can su
 co-parents without making a child identity an Auth account. Cloud Explorers contain only an ID,
 cosmetic look, and timestamps—never a name, birth date, photo, email, location, or content payload.
 
-## Proposed Firestore structure
-
-This is a Phase 9E target only; no collection exists yet.
+## Firestore structure
 
 ```text
 families/{familyId}
@@ -84,10 +82,15 @@ not sufficient for these rules.
 
 SQLite V4 provides `cloud_account_binding` (one explicit device-local family context) and a durable
 `sync_outbox`. A bound local write commits the canonical state and its family-scoped entity-reference
-`upsert` in the same SQLite transaction. The outbox never snapshots DTO payloads: future delivery
-will serialize the latest canonical SQLite state, which safely coalesces convergent progress writes.
-It has no delete operation, entitlement data, Store data, or device settings. Firestore delivery is
-still not implemented.
+`upsert` in the same SQLite transaction. The outbox never snapshots DTO payloads: delivery
+re-reads the latest canonical SQLite state, then performs a Firestore read/merge/write transaction
+using the same pure merge functions as pull. This safely coalesces convergent progress writes and
+avoids Firestore last-write-wins losing educational state. Successful remote writes alone acknowledge
+outbox entries. It has no delete operation, entitlement data, Store data, or device settings.
+
+Firestore uses an in-memory transport cache only. SQLite remains the operational database; screens
+never read Firestore directly, no realtime listeners are installed, and sync is explicit rather than
+an app-startup requirement. Remote merges write SQLite directly without enqueueing echo operations.
 
 ## Guest, sign-out, and account switching policy
 
@@ -114,11 +117,14 @@ Future server verification may strengthen trusted Store evidence but does not ch
 
 ## Security and environments
 
-Phase 9E security rules must require Auth, verify family membership and family isolation, restrict
-Explorer subtrees to members, validate deterministic path/record IDs, field allowlists, and
-`schemaVersion`, and deny entitlement purchase-authority documents and cross-family access.
+`firestore.rules` is default-deny: every family path requires authenticated membership, validates
+allowed document fields/IDs/schema version, and denies deletes. Mobile clients cannot create families
+or membership documents, preventing self-enrollment; secure family bootstrap remains a future
+privileged Phase 9F workflow. Emulator rules tests seed existing-family fixtures with Rules disabled
+only in Node test tooling.
 
 Use separate Firebase development, staging, and production projects; never use production family
-data for testing. Firebase Emulator Suite is required for Auth, Firestore, and rule development
-before production-ready sync. App Check is planned before production enforcement, after the core
-flow works. Analytics, Crashlytics, FCM, and notifications are out of scope for Phase 9.
+data for testing. `firebase.json` configures local Auth/Firestore emulators and client emulator use
+requires both `__DEV__` and explicit environment configuration. App Check is planned before
+production enforcement, after the core flow works. Analytics, Crashlytics, FCM, and notifications
+are out of scope for Phase 9.

@@ -12,6 +12,12 @@ export type FirebaseAvailability =
   | { state: 'notConfigured' }
   | { state: 'initializationFailed' };
 
+export interface FirebaseEmulatorConfig {
+  host: string;
+  authPort: number;
+  firestorePort: number;
+}
+
 function configuredValue(value: string | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -43,4 +49,18 @@ export function getFirebaseAvailability(
       ...(messagingSenderId ? { messagingSenderId } : {}),
     },
   };
+}
+
+/** Emulator use is explicit, development-only, and never inferred from a project ID. */
+export function getFirebaseEmulatorConfig(
+  environment: Record<string, string | undefined> = process.env,
+  isDevelopment = typeof __DEV__ !== 'undefined' && __DEV__,
+): FirebaseEmulatorConfig | null {
+  if (!isDevelopment || environment.EXPO_PUBLIC_FIREBASE_USE_EMULATOR !== 'true') return null;
+  const host = configuredValue(environment.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST);
+  if (!host) return null;
+  const authPort = Number(environment.EXPO_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT ?? '9099');
+  const firestorePort = Number(environment.EXPO_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT ?? '8080');
+  if (!Number.isInteger(authPort) || !Number.isInteger(firestorePort)) return null;
+  return { host, authPort, firestorePort };
 }

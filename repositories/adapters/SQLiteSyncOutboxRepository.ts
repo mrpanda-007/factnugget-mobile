@@ -33,6 +33,15 @@ const ERROR_CODES: readonly CloudSyncError[] = [
   'permissionDenied',
   'retryableFailure',
   'invalidRemoteData',
+  'invalidLocalData',
+  'notFound',
+  'rateLimited',
+  'resourceExhausted',
+  'permanentFailure',
+  'unknownFailure',
+  'bindingMismatch',
+  'unbound',
+  'unavailable',
 ];
 
 function toOperation(row: OutboxRow): SyncOperation {
