@@ -1,13 +1,8 @@
 import { getLearningPackIdForCommerceKey } from '../../commerce/catalogue';
-import { getCurrentPlatformProductId } from '../../commerce/currentPlatform';
+import { createExpoIAPPurchaseProvider } from '@repositories/adapters/ExpoIAPPurchaseProvider';
 import { LegacyContentRepositoryAdapter } from '@repositories/adapters/LegacyContentRepositoryAdapter';
 import { SQLiteEntitlementRepository } from '@repositories/adapters/SQLiteEntitlementRepository';
-import type {
-  Entitlement,
-  EntitlementSource,
-  PurchaseResult,
-  StoreProduct,
-} from '@app-types/domain/commerce';
+import type { Entitlement, EntitlementSource, PurchaseResult } from '@app-types/domain/commerce';
 import { createEntitlementId, type CommerceKey, type LearningPackId } from '@app-types/domain/ids';
 import type { PurchaseProviderContract } from '@repositories/contracts/PurchaseProviderContract';
 import { CommerceService } from './CommerceService';
@@ -22,26 +17,6 @@ export function resolveCommerceEnvironment(
   if (!__DEV__) return 'production';
   if (rawEnvironment === 'staging') return 'staging';
   return 'development';
-}
-
-class UnavailablePurchaseProvider implements PurchaseProviderContract {
-  async loadStoreProducts(commerceKeys: readonly CommerceKey[]): Promise<StoreProduct[]> {
-    commerceKeys.forEach(getCurrentPlatformProductId);
-    return [];
-  }
-
-  async purchase(commerceKey: CommerceKey): Promise<PurchaseResult> {
-    getCurrentPlatformProductId(commerceKey);
-    return { state: 'failed', message: 'Purchases are not available in this build.' };
-  }
-
-  async restorePurchases() {
-    return [];
-  }
-
-  async reconcileOwnedPurchases() {
-    return [];
-  }
 }
 
 export interface DevelopmentEntitlementGrants {
@@ -86,7 +61,7 @@ export function createCommerceDependencies(
   const entitlements = new SQLiteEntitlementRepository({ allowedSources });
   const content = new LegacyContentRepositoryAdapter();
   const commerce = new CommerceService(
-    new UnavailablePurchaseProvider(),
+    createExpoIAPPurchaseProvider(),
     entitlements,
     getLearningPackIdForCommerceKey,
   );

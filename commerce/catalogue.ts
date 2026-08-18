@@ -99,6 +99,16 @@ export function getPlatformProductId(
   return entry[platform].productId;
 }
 
+/** Reverse lookup is infrastructure-only, for translating native Store events. */
+export function getCommerceKeyForPlatformProductId(
+  platform: string,
+  productId: string,
+): CommerceKey | undefined {
+  if (!isCommercePlatform(platform)) return undefined;
+  return commerceCatalogueEntries.find((entry) => entry[platform].productId === productId)
+    ?.commerceKey;
+}
+
 export function getCommerceKeyForLearningPack(
   learningPackId: LearningPackId,
 ): CommerceKey | undefined {

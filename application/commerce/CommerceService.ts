@@ -3,7 +3,7 @@ import type {
   Entitlement,
   PurchaseResult,
   ReconciledPurchase,
-  StoreProduct,
+  StoreProductLookupResult,
 } from '@app-types/domain/commerce';
 import { createEntitlementId, type CommerceKey, type LearningPackId } from '@app-types/domain/ids';
 import type { LearningPack } from '@app-types/domain/content';
@@ -24,9 +24,9 @@ export class CommerceService {
     private readonly now: () => string = () => new Date().toISOString(),
   ) {}
 
-  async resolveStoreProduct(commerceKey: CommerceKey): Promise<StoreProduct | null> {
+  async resolveStoreProduct(commerceKey: CommerceKey): Promise<StoreProductLookupResult> {
     this.requireConfiguredProduct(commerceKey);
-    return (await this.provider.loadStoreProducts([commerceKey]))[0] ?? null;
+    return this.provider.loadStoreProducts([commerceKey]);
   }
 
   async purchase(commerceKey: CommerceKey): Promise<PurchaseResult> {
@@ -56,6 +56,7 @@ export class CommerceService {
     purchases: readonly ReconciledPurchase[],
   ): Promise<Entitlement[]> {
     const stored: Entitlement[] = [];
+    const finalized: ReconciledPurchase[] = [];
     for (const purchase of purchases) {
       const learningPackId = this.learningPackIdForCommerceKey(purchase.commerceKey);
       if (!learningPackId) continue;
@@ -72,6 +73,13 @@ export class CommerceService {
           updatedAt: this.now(),
         }),
       );
+      finalized.push(purchase);
+    }
+    try {
+      await this.provider.finishReconciledPurchases(finalized);
+    } catch (error) {
+      // The entitlement is already durable. A later owned-purchase reconciliation retries finish.
+      console.warn('Commerce transaction finalization will be retried.', error);
     }
     return stored;
   }

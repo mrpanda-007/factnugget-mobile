@@ -185,12 +185,13 @@ describe('Phase 8 commerce foundation', () => {
   it('keeps purchase outcomes discriminated and reconciles only successful ownership', async () => {
     const entitlements = new InMemoryEntitlements();
     const provider: PurchaseProviderContract = {
-      loadStoreProducts: async () => [],
+      loadStoreProducts: async () => ({ state: 'not-found' }),
       purchase: async (): Promise<PurchaseResult> => ({
         state: 'cancelled',
       }),
       restorePurchases: async () => [],
       reconcileOwnedPurchases: async () => [],
+      finishReconciledPurchases: async () => {},
     };
     const commerce = new CommerceService(
       provider,

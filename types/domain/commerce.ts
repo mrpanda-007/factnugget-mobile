@@ -33,12 +33,26 @@ export interface StoreProduct {
   description: string | null;
 }
 
+export type StoreProductLookupResult =
+  | { state: 'available'; products: StoreProduct[] }
+  | { state: 'not-found' }
+  | {
+      state: 'unavailable';
+      code: 'native-module-unavailable' | 'store-unavailable' | 'unsupported-platform';
+      retryable: boolean;
+    };
+
 export type PurchaseResult =
   | { state: 'success'; commerceKey: CommerceKey }
   | { state: 'cancelled' }
   | { state: 'pending'; commerceKey: CommerceKey }
   | { state: 'already-owned'; commerceKey: CommerceKey }
-  | { state: 'failed'; message: string };
+  | {
+      state: 'failed';
+      message: string;
+      code?: 'product-unavailable' | 'store-unavailable' | 'unsupported-platform' | 'unknown';
+      retryable?: boolean;
+    };
 
 /** Provider output is derived data only; raw receipts stay inside the native provider. */
 export interface ReconciledPurchase {
