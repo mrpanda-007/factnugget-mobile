@@ -7,6 +7,7 @@ import type {
   PasswordResetResult,
 } from '@app-types/domain/cloud';
 import type { ParentAuthRepositoryContract } from '@repositories/contracts/ParentAuthRepositoryContract';
+import type { CloudAccountBindingRepositoryContract } from '@repositories/contracts/CloudAccountBindingRepositoryContract';
 
 import type { ParentAccountServiceContract } from './ParentAccountServiceContract';
 
@@ -16,7 +17,12 @@ export class ParentAccountService implements ParentAccountServiceContract {
   private readonly observers = new Set<(state: ParentAuthState) => void>();
   private stopObservingRepository: (() => void) | null = null;
 
-  constructor(private readonly repository: ParentAuthRepositoryContract) {}
+  constructor(
+    private readonly repository: ParentAuthRepositoryContract,
+    private readonly bindings: Pick<CloudAccountBindingRepositoryContract, 'getCurrentBinding'> = {
+      getCurrentBinding: async () => ({ state: 'unbound' }),
+    },
+  ) {}
 
   async createAccount(email: string, password: string): Promise<ParentAuthResult> {
     const result = await this.repository.createAccount({ email, password });
@@ -68,7 +74,7 @@ export class ParentAccountService implements ParentAccountServiceContract {
   }
 
   async getBinding(): Promise<CloudAccountBinding> {
-    return { state: 'unbound' };
+    return this.bindings.getCurrentBinding();
   }
 
   private setState(state: ParentAuthState): void {

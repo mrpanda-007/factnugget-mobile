@@ -228,7 +228,7 @@ async function runValidation(): Promise<Result[]> {
     const tables = await db.getAllAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table';",
     );
-    expect(version?.user_version === 3, 'schema version is not 3');
+    expect(version?.user_version === 4, 'schema version is not 4');
     for (const table of [
       'local_explorers',
       'device_settings',
@@ -237,6 +237,8 @@ async function runValidation(): Promise<Result[]> {
       'learning_pack_progress',
       'earned_badges',
       'local_entitlements',
+      'cloud_account_binding',
+      'sync_outbox',
       'stickers',
     ])
       expect(
@@ -361,7 +363,7 @@ async function runValidation(): Promise<Result[]> {
     await initializeDatabase(db);
     expect(
       (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;'))?.user_version ===
-        3,
+        4,
       'retry did not migrate',
     );
     await db.closeAsync();

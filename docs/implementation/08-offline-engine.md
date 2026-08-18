@@ -1,6 +1,6 @@
 # 08 — Offline Engine
 
-> Phase 9B source-of-truth update. Cloud replication is not implemented yet.
+> Phase 9D local persistence update. Cloud replication is not implemented yet.
 
 ## Requirement
 
@@ -10,8 +10,8 @@ exploration.
 
 ## Future optional cloud replication
 
-Only a parent may opt into cloud replication. Local writes must commit to SQLite first and later
-enqueue a durable SQLite V4 outbox operation. A sync worker will deliver the latest canonical record
+Only a parent may opt into cloud replication. In bound mode, syncable local writes commit their
+canonical SQLite mutation and durable SQLite V4 outbox operation atomically. A future sync worker will deliver the latest canonical record
 as an idempotent upsert, retry retryable failures, and never block UI rendering.
 
 Remote records will be strictly validated, merged through pure monotonic merge functions, and then
@@ -21,11 +21,13 @@ in the initial design.
 
 ## Outbox design for Phase 9D
 
-`sync_outbox` will contain an operation ID, FamilyId, optional Explorer ID, approved entity type,
-deterministic entity ID, `upsert`, creation time, retry count, last attempt time, and normalized
-error code. It stores entity references rather than payload snapshots: progress is convergent state,
-so delivery can serialize current SQLite state and safely collapse intermediate updates. A previous
-family's outbox must be isolated before another account binds.
+`sync_outbox` contains an operation ID, immutable FamilyId, approved entity type, deterministic
+entity ID, `upsert`, creation time, retry count, last attempt time, and normalized error code. Its
+uniqueness key coalesces repeated writes for the same family/entity while retaining the earliest
+creation time. It stores entity references rather than payload snapshots: progress is convergent
+state, so delivery can serialize current SQLite state and safely collapse intermediate updates. A
+previous family's rows remain dormant and isolated after detach; they are never reassigned to a new
+family.
 
 ## Merge policy
 
@@ -41,3 +43,5 @@ fallback; no arbitrary earlier timestamp is invented.
 - Never render empty child state merely because the device is offline.
 - Never let remote data grant Store entitlements.
 - Keep active Explorer selection and sound device-local.
+- Guest/unbound writes remain ordinary SQLite writes and produce no outbox rows.
+- Do not enqueue entitlements, purchase/Store data, content, or device settings.

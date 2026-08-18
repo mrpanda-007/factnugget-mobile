@@ -89,10 +89,28 @@ function badgeKey(explorerId: ExplorerId, worldId: WorldId): string {
 }
 
 export class InMemoryProgressRepository implements ProgressRepositoryContract {
-  private readonly discoveryProgress = new Map<string, DiscoveryProgress>();
-  private readonly packDiscoveryProgress = new Map<string, PackDiscoveryProgress>();
-  private readonly learningPackProgress = new Map<string, LearningPackProgress>();
-  private readonly earnedBadges = new Map<string, EarnedBadge>();
+  private discoveryProgress = new Map<string, DiscoveryProgress>();
+  private packDiscoveryProgress = new Map<string, PackDiscoveryProgress>();
+  private learningPackProgress = new Map<string, LearningPackProgress>();
+  private earnedBadges = new Map<string, EarnedBadge>();
+
+  async withTransaction<T>(work: () => Promise<T>): Promise<T> {
+    const snapshot = {
+      discovery: new Map(this.discoveryProgress),
+      packDiscovery: new Map(this.packDiscoveryProgress),
+      pack: new Map(this.learningPackProgress),
+      badges: new Map(this.earnedBadges),
+    };
+    try {
+      return await work();
+    } catch (error) {
+      this.discoveryProgress = snapshot.discovery;
+      this.packDiscoveryProgress = snapshot.packDiscovery;
+      this.learningPackProgress = snapshot.pack;
+      this.earnedBadges = snapshot.badges;
+      throw error;
+    }
+  }
 
   async getDiscoveryProgress(
     explorerId: ExplorerId,

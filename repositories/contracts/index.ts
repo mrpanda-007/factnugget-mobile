@@ -7,6 +7,14 @@ export type { ProgressRepositoryContract } from './ProgressRepositoryContract';
 export type { PurchaseProviderContract } from './PurchaseProviderContract';
 export type { CloudSyncRepositoryContract } from './CloudSyncRepositoryContract';
 export type {
+  BindCloudAccountInput,
+  CloudAccountBindingRepositoryContract,
+} from './CloudAccountBindingRepositoryContract';
+export type {
+  EnqueueSyncOperationInput,
+  SyncOutboxRepositoryContract,
+} from './SyncOutboxRepositoryContract';
+export type {
   ParentAuthRepositoryContract,
   ParentCredentials,
 } from './ParentAuthRepositoryContract';

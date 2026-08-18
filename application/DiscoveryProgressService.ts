@@ -2,6 +2,7 @@ import type { ContentRepositoryContract } from '../repositories/contracts/Conten
 import type { ProgressRepositoryContract } from '../repositories/contracts/ProgressRepositoryContract';
 import type { PackDiscovery } from '../types/domain/content';
 import type { DiscoveryId, ExplorerId, LearningPackId, WorldId } from '../types/domain/ids';
+import { syncEntityReferences, type LocalSyncQueueService } from './sync/LocalSyncQueueService';
 
 export interface DiscoveryEncounterInput {
   explorerId: ExplorerId;
@@ -19,6 +20,7 @@ export interface CollectDiscoveryResult {
 interface DiscoveryProgressServiceDependencies {
   content: ContentRepositoryContract;
   progress: ProgressRepositoryContract;
+  syncQueue?: LocalSyncQueueService;
   now?: () => string;
 }
 
@@ -34,14 +36,17 @@ export class DiscoveryProgressService {
   private readonly content: ContentRepositoryContract;
   private readonly progress: ProgressRepositoryContract;
   private readonly now: () => string;
+  private readonly syncQueue: LocalSyncQueueService | undefined;
 
   constructor({
     content,
     progress,
+    syncQueue,
     now = () => new Date().toISOString(),
   }: DiscoveryProgressServiceDependencies) {
     this.content = content;
     this.progress = progress;
+    this.syncQueue = syncQueue;
     this.now = now;
   }
 
@@ -60,6 +65,7 @@ export class DiscoveryProgressService {
         occurredAt,
       });
       await this.progress.markPackDiscoveryRevealed({ ...input, occurredAt });
+      await this.enqueueTouchedProgress(input);
     });
   }
 
@@ -117,6 +123,12 @@ export class DiscoveryProgressService {
         occurredAt,
         requiredPacks,
       );
+      await this.enqueueTouchedProgress(input);
+      if (worldBadgeEarnedNow) {
+        await this.syncQueue?.enqueueCurrentBinding(
+          syncEntityReferences.earnedBadge(input.explorerId, pack.worldId),
+        );
+      }
       return {
         discoveryCollectedNow,
         packMembershipCompletedNow,
@@ -196,6 +208,22 @@ export class DiscoveryProgressService {
     }
 
     return this.progress.earnWorldBadge(explorerId, worldId, contentRevision, occurredAt);
+  }
+
+  private async enqueueTouchedProgress(input: DiscoveryEncounterInput): Promise<void> {
+    await this.syncQueue?.enqueueCurrentBinding(
+      syncEntityReferences.learningPackProgress(input.explorerId, input.learningPackId),
+    );
+    await this.syncQueue?.enqueueCurrentBinding(
+      syncEntityReferences.discoveryProgress(input.explorerId, input.discoveryId),
+    );
+    await this.syncQueue?.enqueueCurrentBinding(
+      syncEntityReferences.packDiscoveryProgress(
+        input.explorerId,
+        input.learningPackId,
+        input.discoveryId,
+      ),
+    );
   }
 
   private inTransaction<T>(work: () => Promise<T>): Promise<T> {

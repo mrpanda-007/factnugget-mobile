@@ -118,6 +118,8 @@ export interface DatabaseInitializationOptions {
   beforeVersionTwoCommit?: () => Promise<void> | void;
   /** Development-harness hook used to prove V3 entitlement migration rollback. */
   beforeVersionThreeCommit?: () => Promise<void> | void;
+  /** Development-harness hook used to prove V4 account-binding/outbox migration rollback. */
+  beforeVersionFourCommit?: () => Promise<void> | void;
 }
 
 export async function initializeDatabase(
@@ -127,7 +129,7 @@ export async function initializeDatabase(
   await db.execAsync('PRAGMA foreign_keys = ON;');
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
   const currentVersion = versionRow?.user_version ?? 0;
-  if (currentVersion > 3)
+  if (currentVersion > 4)
     throw new Error(`Database version ${currentVersion} is newer than this app supports.`);
 
   await db.withTransactionAsync(async () => {
@@ -149,6 +151,7 @@ export async function initializeDatabase(
     for (const migration of pendingAfterV2) {
       await db.execAsync(migration.statements.join('\n'));
       if (migration.version === 3) await options.beforeVersionThreeCommit?.();
+      if (migration.version === 4) await options.beforeVersionFourCommit?.();
       await db.execAsync(`PRAGMA user_version = ${migration.version};`);
     }
   });

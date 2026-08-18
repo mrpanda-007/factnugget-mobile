@@ -55,6 +55,33 @@ export const migrations: Migration[] = [
       'CREATE INDEX local_entitlements_last_verified_idx ON local_entitlements (last_verified_at);',
     ],
   },
+  {
+    version: 4,
+    statements: [
+      `CREATE TABLE cloud_account_binding (
+        singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
+        auth_user_id TEXT NOT NULL,
+        family_id TEXT NOT NULL,
+        binding_state TEXT NOT NULL CHECK (binding_state IN ('bound', 'mergeRequired')),
+        bound_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+      'CREATE INDEX cloud_account_binding_auth_user_idx ON cloud_account_binding (auth_user_id);',
+      `CREATE TABLE sync_outbox (
+        operation_id TEXT PRIMARY KEY,
+        family_id TEXT NOT NULL,
+        entity_type TEXT NOT NULL CHECK (entity_type IN ('explorer', 'discoveryProgress', 'packDiscoveryProgress', 'learningPackProgress', 'earnedBadge')),
+        entity_id TEXT NOT NULL,
+        operation_type TEXT NOT NULL CHECK (operation_type = 'upsert'),
+        created_at TEXT NOT NULL,
+        attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+        last_attempt_at TEXT NULL,
+        last_error_code TEXT NULL,
+        UNIQUE (family_id, entity_type, entity_id, operation_type)
+      );`,
+      'CREATE INDEX sync_outbox_family_delivery_idx ON sync_outbox (family_id, created_at, operation_id);',
+    ],
+  },
 ];
 
 /** v2 renames the incompatible v1 discovery table before creating its replacement. */

@@ -129,14 +129,21 @@ export function createFamilyId(): FamilyId {
   return createOpaqueUuid(parseFamilyId);
 }
 
+/** Creates an opaque durable-operation identifier with no domain identity meaning. */
+export function createSyncOperationId(): string {
+  return createUuid();
+}
+
 function createOpaqueUuid<Id extends string>(parse: (value: string) => Id): Id {
+  return parse(createUuid());
+}
+
+function createUuid(): string {
   const bytes = new Uint8Array(new ArrayBuffer(16));
   fillRandomBytes(bytes);
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return parse(
-    `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`,
-  );
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }

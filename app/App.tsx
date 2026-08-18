@@ -21,6 +21,7 @@ import { Phase8CommerceValidationScreen } from '@features/dev/Phase8CommerceVali
 import { Phase8IapValidationScreen } from '@features/dev/Phase8IapValidationScreen';
 import { Phase8PurchaseValidationScreen } from '@features/dev/Phase8PurchaseValidationScreen';
 import { Phase8RestoreValidationScreen } from '@features/dev/Phase8RestoreValidationScreen';
+import { Phase9SyncQueueValidationScreen } from '@features/dev/Phase9SyncQueueValidationScreen';
 import { getParentAccountService } from '../application/sync/parentAccountRuntime';
 
 const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
@@ -31,6 +32,8 @@ const showPhase8PurchaseValidation =
   __DEV__ && process.env.EXPO_PUBLIC_PHASE8_PURCHASE_VALIDATION === 'true';
 const showPhase8RestoreValidation =
   __DEV__ && process.env.EXPO_PUBLIC_PHASE8_RESTORE_VALIDATION === 'true';
+const showPhase9SyncQueueValidation =
+  __DEV__ && process.env.EXPO_PUBLIC_PHASE9_SYNC_QUEUE_VALIDATION === 'true';
 
 /**
  * App-level composition root (docs/implementation/02-folder-structure.md).
@@ -47,6 +50,7 @@ export default function App() {
   if (showPhase8IapValidation) return <Phase8IapValidationScreen />;
   if (showPhase8PurchaseValidation) return <Phase8PurchaseValidationScreen />;
   if (showPhase8RestoreValidation) return <Phase8RestoreValidationScreen />;
+  if (showPhase9SyncQueueValidation) return <Phase9SyncQueueValidationScreen />;
   return <FactNuggetsApp />;
 }
 

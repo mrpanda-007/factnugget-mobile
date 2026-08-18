@@ -51,8 +51,20 @@ export type ParentAuthState =
 /** Future local-binding state. It is a contract only until the SQLite V4 migration. */
 export type CloudAccountBinding =
   | { state: 'unbound' }
-  | { state: 'bound'; authUserId: AuthUserId; familyId: FamilyId; boundAt: string }
-  | { state: 'mergeRequired'; authUserId: AuthUserId; familyId: FamilyId };
+  | {
+      state: 'bound';
+      authUserId: AuthUserId;
+      familyId: FamilyId;
+      boundAt: string;
+      updatedAt: string;
+    }
+  | {
+      state: 'mergeRequired';
+      authUserId: AuthUserId;
+      familyId: FamilyId;
+      boundAt: string;
+      updatedAt: string;
+    };
 
 export type SyncEntityType =
   | 'explorer'
@@ -69,6 +81,8 @@ export interface SyncOperation {
   operation: 'upsert';
   createdAt: string;
   attemptCount: number;
+  lastAttemptAt: string | null;
+  lastErrorCode: CloudSyncError | null;
 }
 
 export type SyncDirection = 'push' | 'pull' | 'reconcile';

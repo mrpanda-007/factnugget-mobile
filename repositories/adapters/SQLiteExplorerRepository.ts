@@ -27,6 +27,15 @@ export interface ActiveExplorerState {
 export class SQLiteExplorerRepository {
   constructor(private readonly database: () => Promise<SQLiteDatabase> = getDatabase) {}
 
+  async withTransaction<T>(work: () => Promise<T>): Promise<T> {
+    const db = await this.database();
+    let value: T | undefined;
+    await db.withTransactionAsync(async () => {
+      value = await work();
+    });
+    return value as T;
+  }
+
   async getActiveState(): Promise<ActiveExplorerState> {
     const db = await this.database();
     const settings = await db.getFirstAsync<SettingsRow>(

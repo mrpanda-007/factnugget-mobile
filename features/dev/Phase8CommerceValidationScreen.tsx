@@ -140,13 +140,13 @@ async function runValidation(): Promise<Result[]> {
     }
   };
 
-  await scenario('Fresh V3, free access, and paid locked access', async () => {
+  await scenario('Fresh V4, free access, and paid locked access', async () => {
     const db = await resetDatabase();
     await initializeDatabase(db);
     expect(
       (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;'))?.user_version ===
-        3,
-      'fresh database is not V3',
+        4,
+      'fresh database is not V4',
     );
     const repository = new SQLiteEntitlementRepository({ database: () => Promise.resolve(db) });
     expect(
@@ -164,14 +164,14 @@ async function runValidation(): Promise<Result[]> {
     await db.closeAsync();
   });
 
-  await scenario('V2 to V3 preserves Phase 7 records without entitlements', async () => {
+  await scenario('V2 to V4 preserves Phase 7 records without entitlements', async () => {
     const db = await resetDatabase();
     const { explorerA } = await seedV2(db);
     await initializeDatabase(db);
     expect(
       (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;'))?.user_version ===
-        3,
-      'V2 database did not migrate to V3',
+        4,
+      'V2 database did not migrate to V4',
     );
     expect(
       (
@@ -222,7 +222,7 @@ async function runValidation(): Promise<Result[]> {
     await initializeDatabase(db);
     expect(
       (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;'))?.user_version ===
-        3,
+        4,
       'retry did not migrate',
     );
     await db.closeAsync();
