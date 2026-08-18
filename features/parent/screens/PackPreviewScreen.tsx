@@ -5,10 +5,14 @@ import { Button } from '@components/Button';
 import { Card } from '@components/Card';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
+import { PackPurchaseSection } from '@features/parent/components/PackPurchaseSection';
 import { colors, worldThemes } from '@constants/tokens';
 import * as ContentRepository from '@repositories/ContentRepository';
+import { getCommerceDependencies } from '../../../application/commerce/commerceRuntime';
+import { parseLearningPackId } from '@app-types/domain/ids';
 import type { Deck } from '@app-types/Deck';
 import type { Discovery } from '@app-types/Discovery';
+import type { LearningPack } from '@app-types/domain/content';
 import type { ParentScreenProps } from '@navigation/types';
 
 function readingTimeLabel(discoveries: Discovery[]) {
@@ -22,13 +26,13 @@ function readingTimeLabel(discoveries: Discovery[]) {
 }
 
 /**
- * Parent-facing Learning Pack explanation. It uses the actual deck and
- * discovery content, but stays deliberately preview-only until billing and
- * entitlement infrastructure exist.
+ * Parent-facing Learning Pack explanation. Canonical Pack access is resolved
+ * before Store metadata; child-facing screens never render this commerce UI.
  */
 export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'PackPreview'>) {
   const { deckId } = route.params;
   const [deck, setDeck] = useState<Deck | null>(null);
+  const [pack, setPack] = useState<LearningPack | null>(null);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,10 +41,12 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
     Promise.all([
       ContentRepository.getDeck(deckId),
       ContentRepository.getDiscoveriesForDeck(deckId),
-    ]).then(([nextDeck, nextDiscoveries]) => {
+      getCommerceDependencies().content.getLearningPack(parseLearningPackId(deckId)),
+    ]).then(([nextDeck, nextDiscoveries, nextPack]) => {
       if (!cancelled) {
         setDeck(nextDeck);
         setDiscoveries(nextDiscoveries);
+        setPack(nextPack);
         setIsLoading(false);
       }
     });
@@ -59,7 +65,7 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
     );
   }
 
-  if (!deck) {
+  if (!deck || !pack) {
     return (
       <View className="flex-1 items-center justify-center gap-md bg-cream px-xl">
         <Text
@@ -93,10 +99,10 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
           accessibilityRole="header"
           className="text-center font-fredoka-bold text-display-lg text-ink-900"
         >
-          {deck.title}
+          {pack.title}
         </Text>
         <Text className="text-center font-nunito-regular text-body-md text-ink-600">
-          {deck.subtitle}
+          {pack.subtitle}
         </Text>
       </View>
 
@@ -180,18 +186,17 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
         </Card>
       </View>
 
-      <Card className="gap-md" padding="lg">
-        <Text className="font-nunito-extrabold text-label text-ink-600">PREVIEW ONLY</Text>
-        <Text className="font-nunito-regular text-body-md text-ink-600">
-          Purchases aren&apos;t available in this build. This preview is here to show what the
-          Learning Pack includes.
-        </Text>
-        <Button
-          label="Back to Parent Area"
-          onPress={() => navigation.goBack()}
-          variant="secondary"
-        />
-      </Card>
+      <PackPurchaseSection
+        pack={pack}
+        onOpenPack={() =>
+          navigation.navigate('Explore', {
+            screen: 'WorldHome',
+            params: { worldId: deck.category },
+          })
+        }
+      />
+
+      <Button label="Back to Parent Area" onPress={() => navigation.goBack()} variant="secondary" />
     </ScrollView>
   );
 }

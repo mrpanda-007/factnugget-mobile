@@ -2,9 +2,9 @@ import { getLearningPackIdForCommerceKey } from '../../commerce/catalogue';
 import { createExpoIAPPurchaseProvider } from '@repositories/adapters/ExpoIAPPurchaseProvider';
 import { LegacyContentRepositoryAdapter } from '@repositories/adapters/LegacyContentRepositoryAdapter';
 import { SQLiteEntitlementRepository } from '@repositories/adapters/SQLiteEntitlementRepository';
-import type { Entitlement, EntitlementSource, PurchaseResult } from '@app-types/domain/commerce';
-import { createEntitlementId, type CommerceKey, type LearningPackId } from '@app-types/domain/ids';
-import type { PurchaseProviderContract } from '@repositories/contracts/PurchaseProviderContract';
+import type { Entitlement, EntitlementSource } from '@app-types/domain/commerce';
+import { createEntitlementId, type LearningPackId } from '@app-types/domain/ids';
+import type { ContentRepositoryContract } from '@repositories/contracts/ContentRepositoryContract';
 import { CommerceService } from './CommerceService';
 import { LearningPackAccessService } from './LearningPackAccessService';
 
@@ -46,6 +46,7 @@ function createDevelopmentEntitlementGrants(
 
 export interface CommerceDependencies {
   environment: CommerceEnvironment;
+  content: ContentRepositoryContract;
   entitlements: SQLiteEntitlementRepository;
   access: LearningPackAccessService;
   commerce: CommerceService;
@@ -67,6 +68,7 @@ export function createCommerceDependencies(
   );
   return {
     environment,
+    content,
     entitlements,
     access: new LearningPackAccessService(content, entitlements),
     commerce,

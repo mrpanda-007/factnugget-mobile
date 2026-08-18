@@ -19,11 +19,14 @@ import { useUIStore } from '@store/useUIStore';
 import { Phase7SQLiteValidationScreen } from '@features/dev/Phase7SQLiteValidationScreen';
 import { Phase8CommerceValidationScreen } from '@features/dev/Phase8CommerceValidationScreen';
 import { Phase8IapValidationScreen } from '@features/dev/Phase8IapValidationScreen';
+import { Phase8PurchaseValidationScreen } from '@features/dev/Phase8PurchaseValidationScreen';
 
 const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
 const showPhase8Validation =
   __DEV__ && process.env.EXPO_PUBLIC_PHASE8_COMMERCE_VALIDATION === 'true';
 const showPhase8IapValidation = __DEV__ && process.env.EXPO_PUBLIC_PHASE8_IAP_VALIDATION === 'true';
+const showPhase8PurchaseValidation =
+  __DEV__ && process.env.EXPO_PUBLIC_PHASE8_PURCHASE_VALIDATION === 'true';
 
 /**
  * App-level composition root (docs/implementation/02-folder-structure.md).
@@ -38,6 +41,7 @@ export default function App() {
   if (showPhase7Validation) return <Phase7SQLiteValidationScreen />;
   if (showPhase8Validation) return <Phase8CommerceValidationScreen />;
   if (showPhase8IapValidation) return <Phase8IapValidationScreen />;
+  if (showPhase8PurchaseValidation) return <Phase8PurchaseValidationScreen />;
   return <FactNuggetsApp />;
 }
 
