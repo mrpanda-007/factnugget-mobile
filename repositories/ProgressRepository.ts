@@ -1,4 +1,6 @@
 import { getSQLiteProgressRepository } from '../application/discoveryProgressRuntime';
+import { getLocalSyncQueueService } from '../application/sync/localSyncQueueRuntime';
+import { syncEntityReferences } from '../application/sync/LocalSyncQueueService';
 import * as ExplorerRepository from '@repositories/ExplorerRepository';
 import { getDatabase } from '@database/client';
 import type { Discovery } from '@app-types/Discovery';
@@ -42,13 +44,20 @@ async function activeExplorerId() {
 }
 
 export function startOrTouchDeck(deckId: string): Promise<void> {
-  return activeExplorerId().then((explorerId) =>
-    getSQLiteProgressRepository().startOrTouchLearningPack(
-      explorerId,
-      parseLearningPackId(deckId),
-      new Date().toISOString(),
-    ),
-  );
+  return activeExplorerId().then(async (explorerId) => {
+    const learningPackId = parseLearningPackId(deckId);
+    const repository = getSQLiteProgressRepository();
+    await repository.withTransaction(async () => {
+      await repository.startOrTouchLearningPack(
+        explorerId,
+        learningPackId,
+        new Date().toISOString(),
+      );
+      await getLocalSyncQueueService().enqueueCurrentBinding(
+        syncEntityReferences.learningPackProgress(explorerId, learningPackId),
+      );
+    });
+  });
 }
 
 /** Caller (a hook holding the deck's full discoveryIds from ContentRepository) decides when a deck is complete — see database/progressQueries.ts#markDeckCompleted. */
