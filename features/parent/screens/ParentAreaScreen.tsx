@@ -9,6 +9,7 @@ import { DiscoveryIllustration } from '@features/collection/components/Discovery
 import { useParentProgress } from '@features/parent/hooks/useParentProgress';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
 import { RestorePurchasesSection } from '@features/parent/components/RestorePurchasesSection';
+import { BackupAndSyncSection } from '@features/parent/components/BackupAndSyncSection';
 import { colors } from '@constants/tokens';
 import type { ParentScreenProps } from '@navigation/types';
 import { useExplorerStore } from '@store/useExplorerStore';
@@ -314,6 +315,8 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
       ) : null}
 
       <RestorePurchasesSection onRestored={refresh} />
+
+      <BackupAndSyncSection />
 
       <View className="gap-md">
         <Text

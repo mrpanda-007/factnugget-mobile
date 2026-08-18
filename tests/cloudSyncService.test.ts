@@ -67,6 +67,9 @@ class MemoryBindings implements CloudAccountBindingRepositoryContract {
   async bind(): Promise<CloudAccountBinding> {
     return this.binding;
   }
+  async replaceBinding(): Promise<CloudAccountBinding> {
+    return this.binding;
+  }
   async detach(): Promise<void> {
     this.binding = { state: 'unbound' };
   }
@@ -126,6 +129,7 @@ function cloud(
       createdAt: timestamp,
       schemaVersion: 1,
     }),
+    listFamilyExplorers: async () => [],
     pullExplorerState: async () => remoteState,
     upsertExplorer: async () => result,
     upsertDiscoveryProgress: async () => {

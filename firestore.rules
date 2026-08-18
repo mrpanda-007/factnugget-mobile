@@ -81,9 +81,15 @@ service cloud.firestore {
         request.resource.data.schemaVersion == 1;
     }
 
+    // Server-managed Auth UID -> Family lookup. Callables use the Admin SDK;
+    // a normal app client never reads or writes this internal index.
+    match /accountFamilyIndex/{authUserId} {
+      allow read, write: if false;
+    }
+
     match /families/{familyId} {
       allow read: if isFamilyMember(familyId);
-      allow create, update, delete: if false; // Family bootstrap is privileged/deferred to Phase 9F.
+      allow create, update, delete: if false; // Family bootstrap is server-only through callable Functions.
 
       match /members/{memberId} {
         allow read: if signedIn() && (memberId == request.auth.uid || isFamilyMember(familyId));

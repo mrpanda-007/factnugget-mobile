@@ -18,6 +18,7 @@ export interface CloudSyncRepositoryContract {
     familyId: FamilyId,
     authUserId: AuthUserId,
   ): Promise<CloudFamilyMemberDto | null>;
+  listFamilyExplorers(familyId: FamilyId): Promise<CloudExplorerDto[]>;
   pullExplorerState(
     familyId: FamilyId,
     explorer: CloudExplorerDto,

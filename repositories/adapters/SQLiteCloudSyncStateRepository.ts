@@ -49,6 +49,30 @@ export class SQLiteCloudSyncStateRepository {
       : null;
   }
 
+  /** Remote import writes never enqueue. Existing local appearance intentionally wins. */
+  async applyExplorer(value: Explorer): Promise<boolean> {
+    const db = await this.database();
+    const result = await db.runAsync(
+      `INSERT INTO local_explorers (id, look_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(id) DO NOTHING;`,
+      value.id,
+      value.lookId,
+      value.createdAt,
+      new Date().toISOString(),
+    );
+    return result.changes === 1;
+  }
+
+  async setActiveExplorer(explorerId: ExplorerId): Promise<void> {
+    const db = await this.database();
+    await db.runAsync(
+      'UPDATE device_settings SET active_explorer_id = ?, updated_at = ? WHERE id = 1;',
+      explorerId,
+      new Date().toISOString(),
+    );
+  }
+
   async getEntity(operation: SyncOperation): Promise<LocalSyncEntity | null> {
     const parts = operation.entityId.split('__');
     const db = await this.database();

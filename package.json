@@ -59,6 +59,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:firestore-rules": "firebase emulators:exec --project factnuggets-phase9e --only auth,firestore \"FIRESTORE_EMULATOR_TEST=true vitest run tests/firestoreRules.test.ts\"",
+    "test:phase9f": "npm --prefix functions run build && firebase emulators:exec --project factnuggets-phase9f --only auth,firestore,functions \"FIRESTORE_EMULATOR_TEST=true FUNCTIONS_EMULATOR_TEST=true vitest run tests/familyBootstrapFunctions.test.ts\"",
     "prepare": "husky"
   },
   "lint-staged": {

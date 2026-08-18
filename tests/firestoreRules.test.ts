@@ -107,6 +107,20 @@ describe.skipIf(!enabled)('Firestore Security Rules', () => {
     );
   });
 
+  it('lists only same-family remote Explorers and rejects guessed cross-family access', async () => {
+    const owner = new FirestoreCloudSyncRepository(
+      testEnvironment.authenticatedContext('parent-a').firestore() as never,
+    );
+    const otherFamily = new FirestoreCloudSyncRepository(
+      testEnvironment.authenticatedContext('parent-a').firestore() as never,
+    );
+    expect(await owner.upsertExplorer(familyA as never, explorer())).toEqual({ state: 'success' });
+    expect(await owner.listFamilyExplorers(familyA as never)).toEqual([explorer()]);
+    await expect(otherFamily.listFamilyExplorers(familyB as never)).rejects.toMatchObject(
+      new CloudTransportError('permissionDenied'),
+    );
+  });
+
   it('denies arbitrary membership self-enrollment', async () => {
     const firestore = testEnvironment.authenticatedContext('parent-a').firestore();
     await assertFails(

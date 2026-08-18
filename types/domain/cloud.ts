@@ -125,3 +125,42 @@ export type CloudSyncResult =
       merged?: number;
       remainingPending?: number;
     };
+
+/** Callable bootstrap results are deliberately independent from Firebase SDK response types. */
+export type FamilyBootstrapError =
+  | 'authRequired'
+  | 'networkUnavailable'
+  | 'permissionDenied'
+  | 'serviceUnavailable'
+  | 'rateLimited'
+  | 'invalidResponse'
+  | 'integrityFailure'
+  | 'unknownFailure';
+
+export type FamilyBootstrapStatus =
+  | { state: 'none' }
+  | { state: 'exists'; familyId: FamilyId }
+  | { state: 'failure'; error: FamilyBootstrapError };
+
+export type FamilyBootstrapCreateResult =
+  { state: 'success'; familyId: FamilyId } | { state: 'failure'; error: FamilyBootstrapError };
+
+export interface RemoteExplorerSummary {
+  explorerId: import('./ids').ExplorerId;
+  lookId: import('./progress').Explorer['lookId'];
+  createdAt: string;
+}
+
+export type RemoteExplorerImportError =
+  | 'authRequired'
+  | 'bindingMismatch'
+  | 'familyMismatch'
+  | 'networkUnavailable'
+  | 'permissionDenied'
+  | 'invalidRemoteData'
+  | 'notFound'
+  | 'unknownFailure';
+
+export type RemoteExplorerImportResult =
+  | { state: 'success'; explorerId: import('./ids').ExplorerId; mergedExisting: boolean }
+  | { state: 'failure'; error: RemoteExplorerImportError };

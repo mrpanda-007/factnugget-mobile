@@ -15,16 +15,19 @@ import {
   memoryLocalCache,
   type Firestore,
 } from 'firebase/firestore';
+import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase/functions';
 
 import {
   getFirebaseAvailability,
   getFirebaseEmulatorConfig,
+  getFirebaseFunctionsRegion,
   type FirebaseAvailability,
 } from './firebaseConfig';
 
 let initializationFailed = false;
 let authEmulatorConnected = false;
 let firestoreEmulatorConnected = false;
+let functionsEmulatorConnected = false;
 
 type ReactNativeAsyncStorage = Pick<typeof AsyncStorage, 'getItem' | 'setItem' | 'removeItem'>;
 type ReactNativePersistenceFactory = (storage: ReactNativeAsyncStorage) => Persistence;
@@ -114,6 +117,24 @@ export function getFirebaseFirestore(): Firestore | null {
       firestoreEmulatorConnected = true;
     }
     return firestore;
+  } catch {
+    initializationFailed = true;
+    return null;
+  }
+}
+
+/** Functions share the one Firebase app and are only emulator-connected in explicit dev mode. */
+export function getFirebaseFunctions(): Functions | null {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  try {
+    const functions = getFunctions(app, getFirebaseFunctionsRegion());
+    const emulator = getFirebaseEmulatorConfig();
+    if (emulator && !functionsEmulatorConnected) {
+      connectFunctionsEmulator(functions, emulator.host, emulator.functionsPort);
+      functionsEmulatorConnected = true;
+    }
+    return functions;
   } catch {
     initializationFailed = true;
     return null;

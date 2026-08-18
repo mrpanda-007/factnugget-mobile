@@ -12,7 +12,6 @@ import {
   parseExplorerId,
   parseFamilyId,
   parseLearningPackId,
-  parseWorldId,
 } from '../types/domain/ids';
 import type { CloudAccountBindingRepositoryContract } from '../repositories/contracts/CloudAccountBindingRepositoryContract';
 import type {
@@ -53,6 +52,15 @@ class MemoryBindings implements CloudAccountBindingRepositoryContract {
         'A different cloud account binding is already active. Detach it explicitly first.',
       );
     }
+    this.binding = { state: 'bound', ...input, updatedAt: input.boundAt };
+    return this.binding;
+  }
+
+  async replaceBinding(input: {
+    authUserId: typeof authA;
+    familyId: typeof familyA;
+    boundAt: string;
+  }) {
     this.binding = { state: 'bound', ...input, updatedAt: input.boundAt };
     return this.binding;
   }

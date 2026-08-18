@@ -6,6 +6,7 @@ import { parseAuthUserId, parseFamilyId } from '@app-types/domain/ids';
 import type {
   BindCloudAccountInput,
   CloudAccountBindingRepositoryContract,
+  ReplaceCloudAccountBindingInput,
 } from '@repositories/contracts/CloudAccountBindingRepositoryContract';
 
 interface BindingRow {
@@ -89,6 +90,29 @@ export class SQLiteCloudAccountBindingRepository implements CloudAccountBindingR
       boundAt: input.boundAt,
       updatedAt: input.boundAt,
     };
+  }
+
+  /** Replaces the singleton binding in one statement; Family-scoped outbox rows are untouched. */
+  async replaceBinding(input: ReplaceCloudAccountBindingInput): Promise<CloudAccountBinding> {
+    const db = await this.database();
+    const result = await db.runAsync(
+      `UPDATE cloud_account_binding
+       SET auth_user_id = ?, family_id = ?, binding_state = 'bound', bound_at = ?, updated_at = ?
+       WHERE singleton_id = 1 AND auth_user_id = ? AND family_id = ? AND binding_state = 'bound';`,
+      input.authUserId,
+      input.familyId,
+      input.boundAt,
+      input.boundAt,
+      input.expectedAuthUserId,
+      input.expectedFamilyId,
+    );
+    if (result.changes !== 1) {
+      throw new Error('The current cloud account binding changed before it could be replaced.');
+    }
+    const binding = await this.getCurrentBinding();
+    if (binding.state !== 'bound')
+      throw new Error('Cloud account binding replacement did not persist.');
+    return binding;
   }
 
   async detach(): Promise<void> {

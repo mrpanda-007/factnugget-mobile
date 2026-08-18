@@ -23,6 +23,8 @@ import { Phase8PurchaseValidationScreen } from '@features/dev/Phase8PurchaseVali
 import { Phase8RestoreValidationScreen } from '@features/dev/Phase8RestoreValidationScreen';
 import { Phase9SyncQueueValidationScreen } from '@features/dev/Phase9SyncQueueValidationScreen';
 import { Phase9FirestoreValidationScreen } from '@features/dev/Phase9FirestoreValidationScreen';
+import { Phase9BackupValidationScreen } from '@features/dev/Phase9BackupValidationScreen';
+import { Phase9MultiDeviceValidationScreen } from '@features/dev/Phase9MultiDeviceValidationScreen';
 import { getParentAccountService } from '../application/sync/parentAccountRuntime';
 
 const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
@@ -37,6 +39,10 @@ const showPhase9SyncQueueValidation =
   __DEV__ && process.env.EXPO_PUBLIC_PHASE9_SYNC_QUEUE_VALIDATION === 'true';
 const showPhase9FirestoreValidation =
   __DEV__ && process.env.EXPO_PUBLIC_PHASE9_FIRESTORE_VALIDATION === 'true';
+const showPhase9BackupValidation =
+  __DEV__ && process.env.EXPO_PUBLIC_PHASE9_BACKUP_VALIDATION === 'true';
+const showPhase9MultiDeviceValidation =
+  __DEV__ && process.env.EXPO_PUBLIC_PHASE9_MULTIDEVICE_VALIDATION === 'true';
 
 /**
  * App-level composition root (docs/implementation/02-folder-structure.md).
@@ -55,6 +61,8 @@ export default function App() {
   if (showPhase8RestoreValidation) return <Phase8RestoreValidationScreen />;
   if (showPhase9SyncQueueValidation) return <Phase9SyncQueueValidationScreen />;
   if (showPhase9FirestoreValidation) return <Phase9FirestoreValidationScreen />;
+  if (showPhase9BackupValidation) return <Phase9BackupValidationScreen />;
+  if (showPhase9MultiDeviceValidation) return <Phase9MultiDeviceValidationScreen />;
   return <FactNuggetsApp />;
 }
 

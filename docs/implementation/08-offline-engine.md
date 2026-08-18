@@ -1,6 +1,6 @@
 # 08 — Offline Engine
 
-> Phase 9D local persistence update. Cloud replication is not implemented yet.
+> Phase 9F local-first persistence and explicit parent Backup & Sync.
 
 ## Requirement
 
@@ -20,6 +20,19 @@ applied to SQLite without creating an echo outbox row. Pushes use Firestore read
 transactions, while pull reads one Explorer snapshot. The cloud client cache is memory-only transport
 detail, not a replacement for SQLite. No cloud-first write path, Firestore direct UI access,
 realtime listener, generic dirty flag, or deletion workflow exists.
+
+After an explicitly verified Family is selected, BackupSetupService creates the local V4 binding and
+historical entity-reference outbox seed in a single SQLite transaction. It enumerates all local Explorers,
+not merely the active Explorer, plus their supported educational progress and badges. This recovery-safe
+seed is idempotent through the V4 outbox uniqueness constraint. The service never seeds entitlements,
+purchase/Store data, content, active Explorer selection, sound, Auth state, or diagnostics. A failed initial
+upload retains the binding and pending rows so a parent can retry while children continue locally.
+
+Account switching changes only the one device-local binding through a conditional atomic replacement.
+It never changes old Family outbox rows. Remote Explorer import stages a complete validated snapshot in
+memory and then applies Explorer/progress/badges through the no-echo SQLite sync repository transaction;
+an interrupted or malformed import leaves no partial Explorer row. Remote recovery remains opt-in and
+does not select an imported Explorer as active without a separate parent action.
 
 ## Outbox design for Phase 9D
 

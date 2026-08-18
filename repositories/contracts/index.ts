@@ -8,6 +8,7 @@ export type { PurchaseProviderContract } from './PurchaseProviderContract';
 export type { CloudSyncRepositoryContract } from './CloudSyncRepositoryContract';
 export type {
   BindCloudAccountInput,
+  ReplaceCloudAccountBindingInput,
   CloudAccountBindingRepositoryContract,
 } from './CloudAccountBindingRepositoryContract';
 export type {
@@ -18,3 +19,4 @@ export type {
   ParentAuthRepositoryContract,
   ParentCredentials,
 } from './ParentAuthRepositoryContract';
+export type { FamilyBootstrapRepositoryContract } from './FamilyBootstrapRepositoryContract';

@@ -16,6 +16,7 @@ export interface FirebaseEmulatorConfig {
   host: string;
   authPort: number;
   firestorePort: number;
+  functionsPort: number;
 }
 
 function configuredValue(value: string | undefined): string | null {
@@ -61,6 +62,19 @@ export function getFirebaseEmulatorConfig(
   if (!host) return null;
   const authPort = Number(environment.EXPO_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT ?? '9099');
   const firestorePort = Number(environment.EXPO_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT ?? '8080');
-  if (!Number.isInteger(authPort) || !Number.isInteger(firestorePort)) return null;
-  return { host, authPort, firestorePort };
+  const functionsPort = Number(environment.EXPO_PUBLIC_FIREBASE_FUNCTIONS_EMULATOR_PORT ?? '5001');
+  if (
+    !Number.isInteger(authPort) ||
+    !Number.isInteger(firestorePort) ||
+    !Number.isInteger(functionsPort)
+  )
+    return null;
+  return { host, authPort, firestorePort, functionsPort };
+}
+
+/** The deployed Function region is explicitly configurable; no secret belongs in this value. */
+export function getFirebaseFunctionsRegion(
+  environment: Record<string, string | undefined> = process.env,
+): string {
+  return configuredValue(environment.EXPO_PUBLIC_FIREBASE_FUNCTIONS_REGION) ?? 'us-central1';
 }

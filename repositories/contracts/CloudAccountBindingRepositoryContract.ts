@@ -7,9 +7,15 @@ export interface BindCloudAccountInput {
   boundAt: string;
 }
 
+export interface ReplaceCloudAccountBindingInput extends BindCloudAccountInput {
+  expectedAuthUserId: AuthUserId;
+  expectedFamilyId: FamilyId;
+}
+
 /** Device-local binding metadata only; Firebase Auth remains outside this contract. */
 export interface CloudAccountBindingRepositoryContract {
   getCurrentBinding(): Promise<CloudAccountBinding>;
   bind(input: BindCloudAccountInput): Promise<CloudAccountBinding>;
+  replaceBinding(input: ReplaceCloudAccountBindingInput): Promise<CloudAccountBinding>;
   detach(): Promise<void>;
 }

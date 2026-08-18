@@ -4,5 +4,6 @@ dist
 web-build
 android
 ios
+functions/lib
 *.png
 *.jpg

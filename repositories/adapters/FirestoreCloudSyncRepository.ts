@@ -121,6 +121,22 @@ export class FirestoreCloudSyncRepository implements CloudSyncRepositoryContract
     }
   }
 
+  async listFamilyExplorers(familyId: FamilyId): Promise<CloudExplorerDto[]> {
+    try {
+      const snapshots = await getDocs(
+        collection(this.firestore, familyPath(familyId), 'explorers'),
+      );
+      return snapshots.docs.map((snapshot) => {
+        const explorer = toExplorerDto(snapshot.data());
+        if (explorer.explorerId !== snapshot.id) throw new CloudTransportError('invalidRemoteData');
+        return explorer;
+      });
+    } catch (error) {
+      if (error instanceof CloudTransportError) throw error;
+      throw new CloudTransportError(normalizeFirestoreError(error));
+    }
+  }
+
   async pullExplorerState(
     familyId: FamilyId,
     explorer: CloudExplorerDto,
