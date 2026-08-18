@@ -8,6 +8,7 @@ import {
 import { LearningPackAccessService } from '../application/commerce/LearningPackAccessService';
 import {
   getCommerceProductConfig,
+  getCommerceKeyForPlatformProductId,
   getPlatformProductId,
   hasCommerceMapping,
   listConfiguredCommerceKeys,
@@ -108,6 +109,13 @@ describe('Phase 8 commerce foundation', () => {
     const commerceKey = parseCommerceKey('space-adventures-one-time');
     expect(getPlatformProductId(commerceKey, 'ios')).toBe('com.factnuggets.pack.space_adventures');
     expect(getPlatformProductId(commerceKey, 'android')).toBe('pack_space_adventures');
+    expect(getCommerceKeyForPlatformProductId('ios', 'com.factnuggets.pack.space_adventures')).toBe(
+      commerceKey,
+    );
+    expect(getCommerceKeyForPlatformProductId('android', 'pack_space_adventures')).toBe(
+      commerceKey,
+    );
+    expect(getCommerceKeyForPlatformProductId('android', 'legacy_unknown_pack')).toBeUndefined();
     expect(getCommerceProductConfig(commerceKey)?.commerceKey).toBe(commerceKey);
     expect(hasCommerceMapping(commerceKey)).toBe(true);
     expect(listConfiguredCommerceKeys()).toEqual([commerceKey]);
@@ -189,8 +197,12 @@ describe('Phase 8 commerce foundation', () => {
       purchase: async (): Promise<PurchaseResult> => ({
         state: 'cancelled',
       }),
-      restorePurchases: async () => [],
-      reconcileOwnedPurchases: async () => [],
+      restorePurchases: async () => ({ state: 'success', purchases: [], unknownProductIds: [] }),
+      reconcileOwnedPurchases: async () => ({
+        state: 'success',
+        purchases: [],
+        unknownProductIds: [],
+      }),
       finishReconciledPurchases: async () => {},
     };
     const commerce = new CommerceService(

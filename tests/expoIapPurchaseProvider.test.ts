@@ -40,6 +40,7 @@ class FakeExpoIapClient implements ExpoIapClient {
   available: ExpoIapPurchase[] = [];
   requested: unknown[] = [];
   finished: ExpoIapPurchase[] = [];
+  restoreCalls = 0;
   initError: unknown;
   onRequest: ((request: unknown) => void) | undefined;
   private updateListener: ((purchase: ExpoIapPurchase) => void) | undefined;
@@ -61,6 +62,10 @@ class FakeExpoIapClient implements ExpoIapClient {
   }
   async getAvailablePurchases() {
     return this.available;
+  }
+  async restorePurchases() {
+    this.restoreCalls += 1;
+    return undefined;
   }
   async finishTransaction({ purchase }: { purchase: ExpoIapPurchase; isConsumable: false }) {
     this.finished.push(purchase);
@@ -109,6 +114,7 @@ function purchased(): ExpoIapPurchase {
     productId: 'pack_space_adventures',
     purchaseState: 'purchased',
     transactionDate: Date.parse(now),
+    isAcknowledgedAndroid: false,
   };
 }
 
@@ -235,6 +241,42 @@ describe('Expo IAP purchase provider', () => {
       code: 'native-module-unavailable',
       retryable: true,
     });
-    await expect(provider.reconcileOwnedPurchases()).resolves.toEqual([]);
+    await expect(provider.reconcileOwnedPurchases()).resolves.toEqual({
+      state: 'unavailable',
+      code: 'native-module-unavailable',
+      retryable: true,
+    });
+  });
+
+  it('runs the explicit restore operation before querying current owned purchases', async () => {
+    const client = new FakeExpoIapClient();
+    client.available = [purchased()];
+    const provider = new ExpoIAPPurchaseProvider(client, {
+      platform: () => 'android',
+      now: () => now,
+    });
+    await expect(provider.restorePurchases()).resolves.toMatchObject({
+      state: 'success',
+      purchases: [
+        {
+          commerceKey,
+          platformProductId: 'pack_space_adventures',
+          source: 'google',
+          status: 'active',
+        },
+      ],
+    });
+    expect(client.restoreCalls).toBe(1);
+  });
+
+  it('reports unknown current Store products without mapping them to an entitlement', async () => {
+    const client = new FakeExpoIapClient();
+    client.available = [{ ...purchased(), productId: 'legacy_unknown_pack' }];
+    const provider = new ExpoIAPPurchaseProvider(client, { platform: () => 'android' });
+    await expect(provider.reconcileOwnedPurchases()).resolves.toEqual({
+      state: 'success',
+      purchases: [],
+      unknownProductIds: ['legacy_unknown_pack'],
+    });
   });
 });

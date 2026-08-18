@@ -8,6 +8,7 @@ import {
   purchaseErrorListener,
   purchaseUpdatedListener,
   requestPurchase,
+  restorePurchases,
   type Product,
   type Purchase,
 } from 'expo-iap';
@@ -25,6 +26,7 @@ const client: ExpoIapClient = {
   fetchProducts: async (request) => (await fetchProducts(request)) as ExpoIapProduct[] | null,
   requestPurchase,
   getAvailablePurchases: async () => (await getAvailablePurchases()) as ExpoIapPurchase[],
+  restorePurchases,
   finishTransaction: async (request) =>
     finishTransaction(request as { purchase: Purchase; isConsumable: false }),
   purchaseUpdatedListener: (listener) =>

@@ -5,6 +5,7 @@ import {
 } from '../../commerce/catalogue';
 import type {
   PurchaseResult,
+  OwnedPurchaseQueryResult,
   ReconciledPurchase,
   StoreProduct,
   StoreProductLookupResult,
@@ -39,6 +40,8 @@ export interface ExpoIapPurchase {
   productId: string;
   purchaseState: 'pending' | 'purchased' | 'unknown';
   transactionDate: number;
+  isAcknowledgedAndroid?: boolean | null;
+  revocationDateIOS?: number | null;
 }
 
 export interface ExpoIapClient {
@@ -50,6 +53,7 @@ export interface ExpoIapClient {
     type: 'in-app';
   }): Promise<unknown>;
   getAvailablePurchases(): Promise<ExpoIapPurchase[]>;
+  restorePurchases(): Promise<void>;
   finishTransaction(request: { purchase: ExpoIapPurchase; isConsumable: false }): Promise<void>;
   purchaseUpdatedListener(listener: (purchase: ExpoIapPurchase) => void): { remove(): void };
   purchaseErrorListener(listener: (error: unknown) => void): { remove(): void };
@@ -206,18 +210,31 @@ export class ExpoIAPPurchaseProvider implements PurchaseProviderContract {
     return result;
   }
 
-  async restorePurchases(): Promise<ReconciledPurchase[]> {
-    return this.reconcileOwnedPurchases();
+  async restorePurchases(): Promise<OwnedPurchaseQueryResult> {
+    if (!(await this.ensureConnected())) return this.unavailableOwnedResult(this.connectionError);
+    try {
+      // expo-iap performs AppStore.sync on iOS; Android queries current ownership.
+      await this.client.restorePurchases();
+      return this.queryOwnedPurchases();
+    } catch (error) {
+      return this.unavailableOwnedResult(error);
+    }
   }
 
-  async reconcileOwnedPurchases(): Promise<ReconciledPurchase[]> {
-    if (!(await this.ensureConnected())) return [];
+  async reconcileOwnedPurchases(): Promise<OwnedPurchaseQueryResult> {
+    if (!(await this.ensureConnected())) return this.unavailableOwnedResult(this.connectionError);
+    return this.queryOwnedPurchases();
+  }
+
+  private async queryOwnedPurchases(): Promise<OwnedPurchaseQueryResult> {
     try {
       const platform = this.options.platform();
-      if (!isCommercePlatform(platform)) return [];
+      if (!isCommercePlatform(platform)) {
+        return { state: 'unavailable', code: 'unsupported-platform', retryable: false };
+      }
       return this.toReconciledPurchases(platform, await this.client.getAvailablePurchases());
-    } catch {
-      return [];
+    } catch (error) {
+      return this.unavailableOwnedResult(error);
     }
   }
 
@@ -300,17 +317,30 @@ export class ExpoIAPPurchaseProvider implements PurchaseProviderContract {
   private toReconciledPurchases(
     platform: CommercePlatform,
     purchases: readonly ExpoIapPurchase[],
-  ): ReconciledPurchase[] {
+  ): OwnedPurchaseQueryResult {
     const now = this.now();
-    return purchases.flatMap((purchase) => {
+    const unknownProductIds: string[] = [];
+    const reconciled: ReconciledPurchase[] = purchases.flatMap((purchase): ReconciledPurchase[] => {
       const commerceKey = getCommerceKeyForPlatformProductId(platform, purchase.productId);
-      if (!commerceKey || purchase.purchaseState !== 'purchased') return [];
-      this.rememberFinishablePurchase(commerceKey, purchase);
+      if (!commerceKey) {
+        unknownProductIds.push(purchase.productId);
+        return [];
+      }
+      if (purchase.purchaseState !== 'purchased') return [];
+      if (this.requiresFinishing(platform, purchase)) {
+        this.rememberFinishablePurchase(commerceKey, purchase);
+      }
       return [
         {
           commerceKey,
+          platformProductId: getPlatformProductId(commerceKey, platform),
           source: platform === 'ios' ? 'apple' : 'google',
-          status: 'active',
+          // The active-items query normally omits revoked StoreKit transactions.
+          // If the provider supplies an affirmative revocation date, preserve it.
+          status:
+            platform === 'ios' && typeof purchase.revocationDateIOS === 'number'
+              ? 'revoked'
+              : 'active',
           grantedAt: this.toIsoDate(purchase.transactionDate) ?? now,
           expiresAt: null,
           lastVerifiedAt: now,
@@ -318,6 +348,7 @@ export class ExpoIAPPurchaseProvider implements PurchaseProviderContract {
         },
       ];
     });
+    return { state: 'success', purchases: reconciled, unknownProductIds };
   }
 
   private rememberFinishablePurchase(commerceKey: CommerceKey, purchase: ExpoIapPurchase): void {
@@ -325,6 +356,13 @@ export class ExpoIAPPurchaseProvider implements PurchaseProviderContract {
     if (!current.some((candidate) => candidate.productId === purchase.productId)) {
       this.finishablePurchases.set(commerceKey, [...current, purchase]);
     }
+  }
+
+  private requiresFinishing(platform: CommercePlatform, purchase: ExpoIapPurchase): boolean {
+    // Android surfaces acknowledgement state directly. StoreKit replays unfinished
+    // transactions, so an iOS current entitlement remains safe to finish after
+    // durable entitlement persistence.
+    return platform === 'ios' || purchase.isAcknowledgedAndroid === false;
   }
 
   private resolvePending(commerceKey: CommerceKey, result: PurchaseResult): void {
@@ -335,6 +373,14 @@ export class ExpoIAPPurchaseProvider implements PurchaseProviderContract {
   }
 
   private unavailableResult(error?: unknown): StoreProductLookupResult {
+    return {
+      state: 'unavailable',
+      code: isMissingNativeModule(error) ? 'native-module-unavailable' : 'store-unavailable',
+      retryable: true,
+    };
+  }
+
+  private unavailableOwnedResult(error?: unknown): OwnedPurchaseQueryResult {
     return {
       state: 'unavailable',
       code: isMissingNativeModule(error) ? 'native-module-unavailable' : 'store-unavailable',
@@ -367,6 +413,7 @@ class UnsupportedExpoIapClient implements ExpoIapClient {
   async getAvailablePurchases(): Promise<ExpoIapPurchase[]> {
     return [];
   }
+  async restorePurchases(): Promise<void> {}
   async finishTransaction(): Promise<void> {}
   purchaseUpdatedListener(): { remove(): void } {
     return { remove() {} };

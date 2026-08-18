@@ -8,6 +8,7 @@ import { SpeakerIcon } from '@components/icons';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
 import { useParentProgress } from '@features/parent/hooks/useParentProgress';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
+import { RestorePurchasesSection } from '@features/parent/components/RestorePurchasesSection';
 import { colors } from '@constants/tokens';
 import type { ParentScreenProps } from '@navigation/types';
 import { useExplorerStore } from '@store/useExplorerStore';
@@ -311,6 +312,8 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
           </Card>
         </View>
       ) : null}
+
+      <RestorePurchasesSection onRestored={refresh} />
 
       <View className="gap-md">
         <Text

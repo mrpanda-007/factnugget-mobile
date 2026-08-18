@@ -57,6 +57,8 @@ export type PurchaseResult =
 /** Provider output is derived data only; raw receipts stay inside the native provider. */
 export interface ReconciledPurchase {
   commerceKey: CommerceKey;
+  /** Store identifier retained only through reconciliation, never persisted as a receipt. */
+  platformProductId: PlatformProductId;
   source: Exclude<EntitlementSource, 'development'>;
   status: EntitlementStatus;
   grantedAt: string;
@@ -64,3 +66,16 @@ export interface ReconciledPurchase {
   lastVerifiedAt: string | null;
   sourceReferenceHash: string | null;
 }
+
+/** Normalized current-ownership query. Empty results are never revocation evidence. */
+export type OwnedPurchaseQueryResult =
+  | {
+      state: 'success';
+      purchases: ReconciledPurchase[];
+      unknownProductIds: string[];
+    }
+  | {
+      state: 'unavailable';
+      code: 'native-module-unavailable' | 'store-unavailable' | 'unsupported-platform';
+      retryable: boolean;
+    };
