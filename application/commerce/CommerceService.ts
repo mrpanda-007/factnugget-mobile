@@ -148,9 +148,11 @@ export class CommerceService {
     }
     try {
       await this.provider.finishReconciledPurchases(finalized);
-    } catch (error) {
+    } catch {
       // The entitlement is already durable. A later owned-purchase reconciliation retries finish.
-      console.warn('Commerce transaction finalization will be retried.', error);
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('Commerce transaction finalization will be retried.');
+      }
     }
     if (stored.length === 0 && failedCommerceKeys.length === 0) {
       return { state: 'nothing-found', unknownProductIds: queryResult.unknownProductIds };

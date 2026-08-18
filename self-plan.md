@@ -110,3 +110,34 @@ Your previously agreed monotonic rules become important here: collected beats re
 9F — Account recovery / sign-out / merge behavior
 Especially important: what happens when someone has significant guest progress and then creates an account?
 9G — Native validation + multi-device scenarios
+
+11A — Full production-readiness pre-check
+Audit package health, native config, environment separation, secrets, Firebase project readiness, Store readiness, crash/error handling, build configuration, dependency advisories, and all known deferred warnings.
+
+11B — End-to-end local + emulator validation
+Re-run the entire Phase 7–9 system as one integrated product:
+child flow, SQLite, commerce, Auth, Family bootstrap, Backup & Sync, account switching, remote import, reinstall recovery, offline/reconnect, and cross-family security.
+
+11C — Real Android native lifecycle validation
+Actual install/run/restart/background/foreground/reinstall/device-state validation, not just assembleDebug.
+
+11D — Real Firebase development environment validation
+Create/configure the real development Firebase project, enable Email/Password Auth, deploy dev Firestore Rules + Functions, verify live Auth/Firestore/Functions, and confirm emulator/live behavior matches.
+
+11E — Security hardening
+Review Firestore Rules, Functions authorization, App Check readiness/enforcement plan, data minimization, secrets, logging, error leakage, abuse cases, dependency advisories, and account/family isolation.
+
+11F — Performance + resilience hardening
+Startup performance, SQLite access, Firestore request volume, retries, offline behavior, duplicate initialization, in-flight guards, memory/resource issues, crash paths, malformed data, interrupted operations.
+
+11G — Commerce production-readiness / Phase 8H closure
+Once Apple/Google developer accounts exist: real product setup, sandbox purchases, restore, pending/cancel/already-owned scenarios, entitlement persistence, install/reinstall behavior, and platform-specific Store validation.
+
+11H — iOS native validation
+On macOS/iOS hardware or simulator: build, launch, persistence, Auth restore, Backup & Sync, Store integration when available, lifecycle/reinstall behavior.
+
+11I — Analytics / crash reporting decision + implementation
+Only after core production behavior is stable. Add privacy-conscious analytics and crash reporting if you actually want them; keep them parent/privacy-safe and separate from child engagement manipulation.
+
+11J — Final release candidate E2E audit
+One final go/no-go covering app boot, child learning loop, purchases, backup/recovery, wrong-account safety, fresh-device restore, offline/reconnect, security, native builds, dependency status, and all production services.

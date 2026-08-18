@@ -33,7 +33,8 @@ yarn-error.*
 
 # local env files — .env.example is the committed template, everything else is not
 .env
-.env*.local
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
