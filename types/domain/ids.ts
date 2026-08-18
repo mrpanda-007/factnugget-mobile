@@ -12,6 +12,10 @@ export type ContentSlug = BrandedString<'ContentSlug'>;
 export type CommerceKey = BrandedString<'CommerceKey'>;
 export type PlatformProductId = BrandedString<'PlatformProductId'>;
 export type EntitlementId = BrandedString<'EntitlementId'>;
+/** A cloud-family identity, deliberately independent from a parent Auth UID. */
+export type FamilyId = BrandedString<'FamilyId'>;
+/** Infrastructure identity of an authenticated parent, never an Explorer identity. */
+export type AuthUserId = BrandedString<'AuthUserId'>;
 
 export const CONTENT_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
@@ -83,6 +87,21 @@ export function parseEntitlementId(value: string): EntitlementId {
   return value as EntitlementId;
 }
 
+export function parseFamilyId(value: string): FamilyId {
+  if (!UUID_PATTERN.test(value)) {
+    throw new Error('Family ID must be a UUID.');
+  }
+  return value as FamilyId;
+}
+
+/** Auth provider UIDs are opaque but must remain safe as a document-path segment. */
+export function parseAuthUserId(value: string): AuthUserId {
+  if (value.trim().length === 0 || /[\s/]/.test(value)) {
+    throw new Error('Auth user ID must be a non-empty path-safe string.');
+  }
+  return value as AuthUserId;
+}
+
 function fillRandomBytes(bytes: Uint8Array<ArrayBuffer>): void {
   const cryptoProvider = globalThis.crypto;
   if (cryptoProvider?.getRandomValues) {
@@ -103,6 +122,11 @@ export function createExplorerId(): ExplorerId {
 /** Creates a local opaque record ID; it never contains store transaction data. */
 export function createEntitlementId(): EntitlementId {
   return createOpaqueUuid(parseEntitlementId);
+}
+
+/** Creates an opaque Family identity; it never derives from an Auth UID or child data. */
+export function createFamilyId(): FamilyId {
+  return createOpaqueUuid(parseFamilyId);
 }
 
 function createOpaqueUuid<Id extends string>(parse: (value: string) => Id): Id {

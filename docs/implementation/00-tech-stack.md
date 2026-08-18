@@ -69,13 +69,13 @@ Redux is not used. See `07-state-management.md`.
 
 ## Backend
 
-**Firebase**, limited to:
+**Firebase JavaScript SDK (optional parent-account foundation added in Phase 9C)**, limited to:
 
 - Authentication
 - Firestore
-- Cloud Messaging
-- Analytics
-- Crashlytics
+- Cloud Messaging _(future, not Phase 9)_
+- Analytics _(future, privacy review required)_
+- Crashlytics _(future, privacy review required)_
 - Storage _(future)_
 - Cloud Functions _(future)_
 

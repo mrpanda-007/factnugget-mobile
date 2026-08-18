@@ -1,339 +1,122 @@
-# 03 — Firebase
+# 03 — Optional Parent Accounts and Cloud Replication
 
-> Part of the Kids Discovery implementation specification.
+> Phase 9C implements optional parent email/password Auth only. Firestore sync is not implemented.
 
----
+## Purpose and scope
 
-# Purpose
+Firebase is optional. The app remains fully usable forever as a local guest experience.
+Firebase Authentication will represent a **parent**, never a child Explorer. Firebase
+Anonymous Auth, Google, Apple, and email-link sign-in are not part of the initial flow.
+Phase 9C uses Firebase JavaScript SDK, email/password, password reset, and explicit React Native
+AsyncStorage-backed Auth persistence. Firebase config is environment-based and optional: if absent,
+the app remains local-only and Parent Auth is explicitly unavailable.
 
-Firebase is responsible for **user identity, cloud synchronization, purchases, notifications, analytics, and application services.**
+Cloud replication is for educational state recovery across devices. It does not replace
+SQLite, Sanity, or the Stores. Screens must use application services, which use project-owned
+repository contracts; screens never access Firebase or Firestore directly.
 
-Firebase is **not** responsible for educational content.
+An authenticated parent is intentionally **unbound** in Phase 9C: Auth UID is not FamilyId, no
+Family record is created, and no Explorer/progress state is uploaded. Parent account connection is
+not a backup or sync completion signal.
 
-Educational content is managed through **Sanity CMS**.
+## Source-of-truth matrix
 
----
+| Data                                   | Operational authority      | Cloud role                           |
+| -------------------------------------- | -------------------------- | ------------------------------------ |
+| Parent Auth identity                   | Firebase Auth              | Optional parent session              |
+| Family identity                        | Family domain record       | Firestore replication                |
+| Explorer identity                      | SQLite                     | Replicated with immutable local UUID |
+| Active Explorer selection              | SQLite device settings     | Never synced                         |
+| DiscoveryProgress                      | SQLite                     | Monotonic replication                |
+| PackDiscoveryProgress                  | SQLite                     | Monotonic replication                |
+| LearningPackProgress                   | SQLite                     | Field-aware replication              |
+| EarnedBadge                            | SQLite                     | Monotonic replication                |
+| Sound setting                          | SQLite device settings     | Never synced                         |
+| Educational content                    | Sanity/content repository  | Never in Firestore                   |
+| Store product metadata                 | Apple/Google provider      | Never authoritative in Firestore     |
+| Purchase transaction/current ownership | Apple/Google Store         | Never in Firestore authority         |
+| Local entitlement cache                | Store-derived SQLite state | Never grants access from cloud data  |
 
-# Scope
+## Identity and privacy model
 
-Only the following Firebase services are approved for this project.
+`FamilyId` is an opaque UUID independent of a Firebase Auth UID. Existing Explorer UUIDs
+remain their cloud identity. A family has parent memberships so the model can support future
+co-parents without making a child identity an Auth account. Cloud Explorers contain only an ID,
+cosmetic look, and timestamps—never a name, birth date, photo, email, location, or content payload.
 
-## Firebase Authentication
+## Proposed Firestore structure
 
-Used for:
+This is a Phase 9E target only; no collection exists yet.
 
-- Parent Accounts
-- Anonymous Sessions
-- Account Linking
-- Google Sign In
-- Sign in with Apple
-
----
-
-## Firestore
-
-Used for:
-
-- Parent Profiles
-- Child Profiles
-- Learning Progress
-- Sticker Collections
-- Discovery Collections
-- Purchased Products
-- User Settings
-- Notification Preferences
-- Sync Metadata
-- Feature Flags (optional)
-
-Firestore must never store educational content.
-
----
-
-## Firebase Cloud Messaging
-
-Used for **remote, server-triggered notifications only**. Today's Discovery reminders are delivered on-device instead, with no Cloud Messaging involved — see [Notifications](#notifications) below for the full split and the reasoning.
-
-Used for:
-
-- Parent progress notifications _(future — requires [Cloud Functions](#cloud-functions))_
-- Announcement notifications _(future)_
-
----
-
-## Firebase Analytics
-
-Used only for anonymous product analytics. See [Analytics](#analytics) below for the canonical event list — it is defined once, there.
-
-Do not collect unnecessary personal information.
-
----
-
-## Firebase Crashlytics
-
-Used for:
-
-- Crash Reporting
-- Fatal Errors
-- Performance Monitoring
-
-Must be enabled for production builds.
-
----
-
-## Firebase Storage
-
-Reserved for future features.
-
-Examples:
-
-- User generated content
-- Profile avatars
-- Future downloadable assets
-
-Educational assets should continue to be served through Sanity.
-
----
-
-## Cloud Functions
-
-Reserved for backend logic.
-
-Future responsibilities include:
-
-- Purchase Verification
-- Notification Scheduling _(see [Notifications](#notifications) — this is what unlocks remote parent notifications)_
-- Premium Entitlement Validation
-- Weekly Progress Summaries
-- Content Synchronization Tasks
-
-Cloud Functions should not be introduced unless server-side logic is required.
-
----
-
-# Authentication
-
-Supported authentication providers:
-
-- Anonymous
-- Email & Password
-- Google
-- Apple
-
-Requirements:
-
-- Anonymous users can use the application immediately.
-- Anonymous accounts must be upgradeable.
-- Linking an anonymous account must preserve:
-  - Child Profiles
-  - Progress
-  - Collections
-  - Purchases
-  - Settings
-
-No user should ever lose data when creating an account.
-
----
-
-# Firestore Data Model
-
-The hierarchy follows the real-world ownership chain: one parent account owns multiple child profiles, and per-child data nests under the child it belongs to.
-
-```
-users/{userId}
-  children/{childId}
-    progress/{discoveryId}
-    collections/{discoveryId}
-    stickers/{stickerId}
-  purchases/{purchaseId}
-  settings
-  notifications
-  sync
+```text
+families/{familyId}
+  members/{authUserId}
+  explorers/{explorerId}
+    discoveryProgress/{discoveryId}
+    packDiscoveryProgress/{learningPackId__discoveryId}
+    learningPackProgress/{learningPackId}
+    badges/{worldId}
 ```
 
-| Path                                               | Scope   | Purpose                                                                     |
-| -------------------------------------------------- | ------- | --------------------------------------------------------------------------- |
-| `users/{userId}`                                   | Account | Parent account document — auth-linked profile                               |
-| `users/{userId}/children/{childId}`                | Child   | Child profile — name, avatar, difficulty preference                         |
-| `.../children/{childId}/progress/{discoveryId}`    | Child   | Per-discovery completion state                                              |
-| `.../children/{childId}/collections/{discoveryId}` | Child   | Discoveries the child has unlocked — their card album                       |
-| `.../children/{childId}/stickers/{stickerId}`      | Child   | Stickers earned as rewards                                                  |
-| `users/{userId}/purchases/{purchaseId}`            | Account | Purchase entitlements — see [Purchase Entitlements](#purchase-entitlements) |
-| `users/{userId}/settings`                          | Account | Account-level settings (single document)                                    |
-| `users/{userId}/notifications`                     | Account | Notification preferences (single document)                                  |
-| `users/{userId}/sync`                              | Account | Sync metadata (single document)                                             |
+All IDs are canonical typed IDs. Content IDs exclude underscores, making `__` a deterministic,
+unambiguous pack-discovery delimiter. Path construction belongs in typed cloud path helpers, never
+in screens.
 
-Scoping rules this hierarchy is built to support:
+## Local-first synchronization
 
-- **Purchases, settings, notification preferences, and sync metadata are account-level, not per-child** — an expansion pack unlocks for every child profile on the account (see [`09-purchases.md`](09-purchases.md)), and notification/settings choices are made by the parent, not the child.
-- **`collections/` and `stickers/` are deliberately separate**, not duplicates: `collections/` records which discoveries a child has unlocked; `stickers/` records the distinct reward-sticker collectible earned alongside it.
-- Nesting per-child data under `children/{childId}` means Firestore Security Rules can authorize with `request.auth.uid == userId` at the top of the path and inherit down through subcollections, without needing a redundant `childId` field on every document for rule matching.
+The future local write path is:
 
-Future collections should require architectural review.
+```text
+UI → application service → SQLite → durable SQLite outbox → asynchronous cloud replication
+```
 
----
+The future remote path is:
 
-# Firestore Responsibilities
+```text
+cloud DTO → strict validation → pure merge → SQLite → normal UI refresh
+```
 
-Firestore stores only user-specific information.
+Event timestamps record reveal, collection, completion, earning, and last view. Transport/sync
+timestamps must never overwrite those events. Discovery and pack-discovery fields use earliest
+valid timestamps; learning-pack start uses earliest, last view uses latest, and completion/badge
+revisions stay paired with the accepted earliest completion/earning. Firestore last-write-wins is
+not sufficient for these rules.
 
-Examples:
+Phase 9D will add a SQLite V4 `cloud_account_binding` and a durable `sync_outbox`. The preferred
+outbox stores a family-scoped entity reference and `upsert` operation, then serializes the latest
+canonical SQLite state at delivery. That is appropriate because progress replication is convergent
+state, not an event log. Initial sync has no delete operation.
 
-- Learning Progress
-- Completed Discoveries
-- Earned Stickers
-- Purchased Expansion Packs
-- Child Profiles
-- Parent Preferences
-- Notification Settings
+## Guest, sign-out, and account switching policy
 
-Educational content, images, quizzes, narration, and discovery metadata belong in Sanity.
+Creating a new parent account creates a FamilyId later, preserves every existing Explorer UUID,
+binds local state, queues its syncable records, and leaves SQLite operationally unchanged.
 
----
+Signing into an existing family must never silently merge local child state. The parent must later
+choose to import local Explorers as distinct records or keep the data local and unbound. Different
+Explorer UUIDs are always distinct; matching by look, progress, time, or a future name is forbidden.
 
-# Purchase Entitlements
+Sign-out ends the Auth session and stops sync but retains SQLite data and child exploration. Before
+another account/family can bind, the previous family context and outbox must be isolated so no write
+can be delivered to the new family. Account switching is high risk and requires an explicit future
+import/bind decision.
 
-Firestore is the source of truth for user entitlements after purchase verification.
+## Purchases and entitlements
 
-Examples:
+Apple and Google Stores are the authority for purchase transactions and current ownership.
+`local_entitlements` is a derived SQLite cache, and the EntitlementRepository is the application
+access-decision boundary. Firestore must not independently grant Store-purchased access, including
+cross-platform access. Apple ownership does not automatically unlock Android, and Google ownership
+does not automatically unlock iOS; same-platform Store Restore remains separate from cloud sync.
+Future server verification may strengthen trusted Store evidence but does not change this authority.
 
-- Premium Access
-- Purchased Discovery Packs
-- Purchased Category Expansions
-- Promotional Unlocks
-- Early Access Users
+## Security and environments
 
-The application should determine unlocked content from user entitlements rather than hardcoded logic. `PurchaseService` owns entitlement resolution — see [`01-project-architecture.md`](01-project-architecture.md#service-layer) and [`09-purchases.md`](09-purchases.md).
+Phase 9E security rules must require Auth, verify family membership and family isolation, restrict
+Explorer subtrees to members, validate deterministic path/record IDs, field allowlists, and
+`schemaVersion`, and deny entitlement purchase-authority documents and cross-family access.
 
----
-
-# Access Rules
-
-Firebase must never be accessed directly from UI components.
-
-Architecture:
-
-UI
-
-↓
-
-Repositories
-
-↓
-
-Services
-
-↓
-
-Firebase
-
-Only the service layer may communicate with the Firebase SDK.
-
-Server state should be managed through TanStack Query.
-
-Application state should be managed through Zustand.
-
-Repository responsibilities, the Repository/Service split, and the concrete service modules (`AuthService`, `ContentService`, `PurchaseService`, `NotificationService`, `AnalyticsService`, `SyncService`) are defined once in [`01-project-architecture.md`](01-project-architecture.md#repositories-layer) — this document assumes that layering rather than repeating it.
-
----
-
-# Error Handling
-
-This is the canonical error-handling checklist for the project. [`11-coding-standards.md`](11-coding-standards.md) references this section rather than restating it.
-
-Every Firebase operation must handle:
-
-1. Loading state
-2. Failure state
-3. Retry
-4. Offline mode
-5. Friendly, age-appropriate error UI
-6. Never crash the application
-
-Offline-first behavior is mandatory.
-
----
-
-# Synchronization
-
-Firestore synchronization should occur automatically.
-
-Synchronization includes:
-
-- Progress
-- Stickers
-- Purchases
-- Child Profiles
-- Settings
-
-The application should continue functioning while offline.
-
-Pending changes should synchronize automatically when connectivity returns. The offline write queue that makes this possible is owned by `SyncService` and specified in [`08-offline-engine.md`](08-offline-engine.md#offline-sync-queue).
-
----
-
-# Notifications
-
-Notification delivery is split by whether it needs a backend trigger. This is a deliberate split, not an oversight: sending a Firebase Cloud Messaging push requires a server-side sender (Cloud Functions), which is future scope — so any notification needed for the MVP must not depend on it.
-
-## Local Scheduled Notifications (Child) — MVP
-
-Delivered entirely on-device. No backend, no Cloud Messaging, no Cloud Functions involved:
-
-- Today's Discovery reminder
-- Gentle reminders
-
-Maximum frequency: one notification every two days.
-
-This uses the same on-device notification tooling already required to _receive_ Cloud Messaging pushes (see `00-tech-stack.md`) — scheduling a local notification is not a new dependency. Owned by `NotificationService` (see [`01-project-architecture.md`](01-project-architecture.md#service-layer)).
-
----
-
-## Remote Notifications via Cloud Messaging (Parent) — Future
-
-Deferred until [Cloud Functions](#cloud-functions) exists, since the client cannot trigger an FCM send on its own:
-
-- Weekly learning summary
-- Deck completed
-- Sticker milestones
-- Major achievements
-
-All notifications — local and remote — must be configurable by the parent.
-
----
-
-# Security
-
-Requirements:
-
-- Firestore Security Rules
-- Authentication Rules
-- Environment Variables
-- No Secrets in Source Code
-- App Check enabled for production
-
-All Firebase access must be authenticated.
-
----
-
-# Analytics
-
-This is the canonical list of tracked analytics events for the whole project. [`01-project-architecture.md`](01-project-architecture.md) and [`09-purchases.md`](09-purchases.md) reference this table rather than restating it — add or rename an event here only.
-
-Track only meaningful events:
-
-| Event                 | Fires when                                                                                                        |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `App Open`            | The application launches                                                                                          |
-| `Category Viewed`     | A child opens a category                                                                                          |
-| `Deck Started`        | A child opens a deck (its first discovery)                                                                        |
-| `Deck Completed`      | A child finishes every discovery in a deck                                                                        |
-| `Discovery Viewed`    | A child opens a discovery card                                                                                    |
-| `Discovery Completed` | A child finishes a discovery (reward granted)                                                                     |
-| `Sticker Earned`      | A sticker is awarded                                                                                              |
-| `Expansion Purchased` | A purchase completes — base app, discovery pack, or category expansion (see [`09-purchases.md`](09-purchases.md)) |
-
-`Discovery Viewed` / `Discovery Completed` and `Deck Started` / `Deck Completed` are intentionally distinct event pairs — viewing does not imply completion.
-
-Analytics should prioritize product improvement while respecting children's privacy. Do not collect unnecessary personal information.
-
----
+Use separate Firebase development, staging, and production projects; never use production family
+data for testing. Firebase Emulator Suite is required for Auth, Firestore, and rule development
+before production-ready sync. App Check is planned before production enforcement, after the core
+flow works. Analytics, Crashlytics, FCM, and notifications are out of scope for Phase 9.

@@ -1,89 +1,43 @@
 # 08 — Offline Engine
 
-> Part of the Kids Discovery implementation specification.
-
----
+> Phase 9B source-of-truth update. Cloud replication is not implemented yet.
 
 ## Requirement
 
-The application must **launch and operate without internet**. Offline is the default assumption, not a fallback.
+The application launches and operates without internet. SQLite is the operational source of truth
+for Explorer state, progress, badges, and device settings; the network is never required for child
+exploration.
 
----
+## Future optional cloud replication
 
-## What Must Work Offline
+Only a parent may opt into cloud replication. Local writes must commit to SQLite first and later
+enqueue a durable SQLite V4 outbox operation. A sync worker will deliver the latest canonical record
+as an idempotent upsert, retry retryable failures, and never block UI rendering.
 
-- Content
-- Images
-- Collections
-- Progress
-- Settings
-- Category browsing
-- Completing a discovery
+Remote records will be strictly validated, merged through pure monotonic merge functions, and then
+applied to SQLite. The cloud client cache is transport detail, not a replacement for SQLite. No
+cloud-first write path, Firestore direct UI access, generic dirty flags, or deletion workflow exists
+in the initial design.
 
----
+## Outbox design for Phase 9D
 
-## Local Storage
+`sync_outbox` will contain an operation ID, FamilyId, optional Explorer ID, approved entity type,
+deterministic entity ID, `upsert`, creation time, retry count, last attempt time, and normalized
+error code. It stores entity references rather than payload snapshots: progress is convergent state,
+so delivery can serialize current SQLite state and safely collapse intermediate updates. A previous
+family's outbox must be isolated before another account binds.
 
-**Expo SQLite** stores:
+## Merge policy
 
-- Downloaded discoveries and categories (synced from Sanity — see `06-content-sync-engine.md`)
-- Progress cache
-- Settings cache
-- Collections
-
-All schema, migrations, and query helpers live in `database/`.
-
----
-
-## Why This Works
-
-- Educational content is downloaded from Sanity and cached in SQLite + the local filesystem — see `06-content-sync-engine.md`.
-- User data (progress, collections, settings) is cached in SQLite on every successful read/write against Firebase.
-
-The network is only needed to **sync**, never to **read**.
-
----
-
-## Synchronization
-
-- Sync happens **automatically when internet returns**.
-- Writes made offline are queued locally and replayed on reconnect — see [Offline Sync Queue](#offline-sync-queue) below for the mechanism.
-- Conflicts resolve in favor of the most recent local user action for progress and collections.
-- Sync failures must never block the UI or crash the app.
-
----
-
-## Offline Sync Queue
-
-This is what "writes are queued locally and replayed on reconnect" (above) actually consists of.
-
-**Purpose:** buffer writes to user data (progress, collections, settings) made while offline, so nothing is lost before Firestore is reachable again.
-
-**Queue model:** a single append-only SQLite table in `database/`, alongside the rest of the schema (see [`02-folder-structure.md`](02-folder-structure.md)) — one row per pending write:
-
-| Field        | Purpose                                                                                                  |
-| ------------ | -------------------------------------------------------------------------------------------------------- |
-| `id`         | Local queue entry id                                                                                     |
-| `path`       | Target Firestore path — see [`03-firebase.md#firestore-data-model`](03-firebase.md#firestore-data-model) |
-| `operation`  | `set` \| `update`                                                                                        |
-| `payload`    | The write payload                                                                                        |
-| `createdAt`  | Ordering and conflict resolution                                                                         |
-| `retryCount` | Backoff                                                                                                  |
-
-This is a flat queue, not a general event log — a single child's data on a single device doesn't need operational-transform or CRDT-level machinery, and adding it now would be overengineering.
-
-**Retry behavior:** on reconnect, `SyncService` drains the queue oldest-first, retrying failed writes with backoff. A write that keeps failing stays in the queue — it is never silently dropped — and is surfaced through Crashlytics rather than blocking the UI.
-
-**Conflict resolution:** last-write-wins by `createdAt`, favoring the most recent local action for progress and collections (as stated above). This is sufficient because the MVP has no concurrent-multi-device-editing scenario for a single child; revisit only if that becomes a real requirement.
-
-**Ownership:** `SyncService` (see [`01-project-architecture.md#service-layer`](01-project-architecture.md#service-layer)) owns draining and replaying the queue. Repositories enqueue a write through `SyncService` when a Firestore write fails while offline — they never touch the queue table directly.
-
-**Storage location:** `database/`, next to the rest of the SQLite schema. No separate `sync/` folder is needed for this.
-
----
+Discovery and contextual pack discovery use earliest valid reveal/completion timestamps. Learning
+pack progress uses earliest start, latest last view, and earliest completion with its matching
+revision. Earned badges are permanent and use earliest earning with its matching revision. A
+completion/collection lacking a reveal is repaired using its own event timestamp as the reveal
+fallback; no arbitrary earlier timestamp is invented.
 
 ## Rules
 
-- Never show a blocking spinner that depends on network availability for core flows.
-- Never render an empty state simply because the device is offline.
-- Every screen must be testable in airplane mode as part of the Definition of Done (`12-build-rules.md`).
+- Never block core UI on network state.
+- Never render empty child state merely because the device is offline.
+- Never let remote data grant Store entitlements.
+- Keep active Explorer selection and sound device-local.

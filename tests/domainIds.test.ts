@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   CONTENT_ID_PATTERN,
   createExplorerId,
+  createFamilyId,
+  parseAuthUserId,
   parseContentSlug,
   parseDiscoveryId,
   parseExplorerId,
+  parseFamilyId,
   parseLearningPackId,
   parseWorldId,
 } from '../types/domain/ids';
@@ -47,5 +50,13 @@ describe('canonical domain IDs', () => {
     expect(parseExplorerId(first)).toBe(first);
     expect(first).not.toBe(second);
     expect(() => parseExplorerId('ocean')).toThrow();
+  });
+
+  it('creates Family IDs independently from Explorer and parent Auth identities', () => {
+    const familyId = createFamilyId();
+    expect(parseFamilyId(familyId)).toBe(familyId);
+    expect(parseAuthUserId('firebase-parent-uid')).toBe('firebase-parent-uid');
+    expect(() => parseAuthUserId('parent/uid')).toThrow();
+    expect(() => parseFamilyId('family')).toThrow();
   });
 });

@@ -36,9 +36,13 @@ Launch pricing is controlled by **feature flags**.
 
 ---
 
-## Firestore
+## Cloud policy
 
-Purchases are recorded in Firestore under user-specific data. Firestore is a record, not the authority — the platform receipt is the authority.
+Apple and Google Store current ownership is the authority. The local SQLite entitlement cache is
+derived from Store reconciliation and feeds the EntitlementRepository access decision. Phase 9 cloud
+replication does not create purchase, receipt, ownership, or access-granting entitlement records;
+Firestore must never unlock content independently. Restore Purchases remains a Store operation, not
+cloud synchronization.
 
 ---
 

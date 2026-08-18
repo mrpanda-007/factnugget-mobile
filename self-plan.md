@@ -94,3 +94,19 @@ Restore purchases and handle interrupted/pending purchases.
 Phase 8H — Native validation
 Real sandbox/test purchase testing on Android and iOS.
 That separation will make failures much easier to diagnose.
+
+phase 9
+
+9A — Firebase prerequisite & sync architecture audit
+Read-only first. Determine current packages/config, identify exactly what should sync, define family/account model, conflict rules, privacy considerations, and whether Firebase projects already exist.
+9B — Parent authentication foundation
+Optional parent account creation/sign-in, likely without forcing children into account concepts.
+9C — Family / Explorer cloud identity mapping
+One parent may eventually own multiple Explorers. Local Explorer IDs need stable cloud mapping without replacing their local identity.
+9D — Cloud progress replication
+Discovery progress, Pack progress, Badges, settings where appropriate.
+9E — Conflict resolution + offline sync
+Your previously agreed monotonic rules become important here: collected beats revealed, Badge union, earliest achievement timestamp, latest lastViewed, etc.
+9F — Account recovery / sign-out / merge behavior
+Especially important: what happens when someone has significant guest progress and then creates an account?
+9G — Native validation + multi-device scenarios

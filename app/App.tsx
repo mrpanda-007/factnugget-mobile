@@ -21,6 +21,7 @@ import { Phase8CommerceValidationScreen } from '@features/dev/Phase8CommerceVali
 import { Phase8IapValidationScreen } from '@features/dev/Phase8IapValidationScreen';
 import { Phase8PurchaseValidationScreen } from '@features/dev/Phase8PurchaseValidationScreen';
 import { Phase8RestoreValidationScreen } from '@features/dev/Phase8RestoreValidationScreen';
+import { getParentAccountService } from '../application/sync/parentAccountRuntime';
 
 const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
 const showPhase8Validation =
@@ -65,6 +66,9 @@ function FactNuggetsApp() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Auth restoration is intentionally non-blocking: the child app never waits on Firebase.
+  useEffect(() => getParentAccountService().start(), []);
 
   useEffect(() => {
     if (fontsLoaded && isHydrated) {

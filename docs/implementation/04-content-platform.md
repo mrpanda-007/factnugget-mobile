@@ -85,7 +85,8 @@ Sanity must never store:
 - Analytics
 - Notification Settings
 
-Those belong in Firebase — see [`03-firebase.md`](03-firebase.md).
+Optional parent-account cloud replication may hold pseudonymous educational state; Stores remain the
+authority for purchases and Phase 9C implements Auth only, not cloud replication. See [`03-firebase.md`](03-firebase.md).
 
 ---
 
