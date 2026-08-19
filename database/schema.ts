@@ -82,6 +82,18 @@ export const migrations: Migration[] = [
       'CREATE INDEX sync_outbox_family_delivery_idx ON sync_outbox (family_id, created_at, operation_id);',
     ],
   },
+  {
+    version: 5,
+    statements: [
+      `CREATE TABLE content_cache (
+        singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
+        snapshot_schema_version INTEGER NOT NULL,
+        dataset TEXT NOT NULL,
+        fetched_at TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL
+      );`,
+    ],
+  },
 ];
 
 /** v2 renames the incompatible v1 discovery table before creating its replacement. */

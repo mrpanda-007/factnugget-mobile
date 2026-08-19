@@ -82,12 +82,12 @@ afterEach(async () => {
 });
 
 describe('Phase 11B local integrated E2E', () => {
-  it('starts local-only on schema v4 with no cloud, queue, entitlement, or active Explorer', async () => {
+  it('starts local-only on schema v5 with no cloud, queue, entitlement, or active Explorer', async () => {
     const value = await freshDatabase();
     const repo = repositories(value);
     expect(
       await value.database.getFirstAsync<{ user_version: number }>('PRAGMA user_version;'),
-    ).toEqual({ user_version: 4 });
+    ).toEqual({ user_version: 5 });
     expect(await repo.explorers.getActiveState()).toEqual({ explorer: null, soundEnabled: false });
     expect(await repo.bindings.getCurrentBinding()).toEqual({ state: 'unbound' });
     expect(await repo.outbox.countPending(familyA)).toBe(0);

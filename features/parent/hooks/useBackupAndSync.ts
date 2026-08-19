@@ -25,12 +25,20 @@ function runtimeDependencies(): BackupAndSyncDependencies {
 }
 
 /** React binding for the parent-only backup state machine. */
-export function useBackupAndSync(dependencies: BackupAndSyncDependencies = runtimeDependencies()) {
+export function useBackupAndSync(dependencies?: BackupAndSyncDependencies) {
   const [state, setState] = useState<BackupAndSyncState>(initial);
   const model = useRef<BackupAndSyncViewModel | null>(null);
+  // Runtime composition must stay referentially stable. Recreating this object on every render
+  // retriggers the effect after each published state and leaves the UI stuck on "Checking…".
+  // A lazy useState initializer (not a ref write) runs this exactly once, on mount, and never
+  // touches .current during render — react-hooks/refs forbids the latter.
+  const [fallbackDependencies] = useState<BackupAndSyncDependencies | null>(() =>
+    dependencies ? null : runtimeDependencies(),
+  );
+  const resolvedDependencies = dependencies ?? fallbackDependencies!;
 
   useEffect(() => {
-    const next = new BackupAndSyncViewModel(dependencies);
+    const next = new BackupAndSyncViewModel(resolvedDependencies);
     model.current = next;
     const unsubscribe = next.subscribe(setState);
     void next.refresh();
@@ -39,7 +47,7 @@ export function useBackupAndSync(dependencies: BackupAndSyncDependencies = runti
       next.dispose();
       if (model.current === next) model.current = null;
     };
-  }, [dependencies]);
+  }, [resolvedDependencies]);
 
   return {
     ...state,

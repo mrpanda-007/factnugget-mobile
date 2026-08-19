@@ -129,7 +129,7 @@ export async function initializeDatabase(
   await db.execAsync('PRAGMA foreign_keys = ON;');
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
   const currentVersion = versionRow?.user_version ?? 0;
-  if (currentVersion > 4)
+  if (currentVersion > 5)
     throw new Error(`Database version ${currentVersion} is newer than this app supports.`);
 
   await db.withTransactionAsync(async () => {

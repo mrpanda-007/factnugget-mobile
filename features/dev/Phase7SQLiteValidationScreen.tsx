@@ -228,7 +228,7 @@ async function runValidation(): Promise<Result[]> {
     const tables = await db.getAllAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table';",
     );
-    expect(version?.user_version === 4, 'schema version is not 4');
+    expect(version?.user_version === 5, 'schema version is not 5');
     for (const table of [
       'local_explorers',
       'device_settings',
@@ -240,6 +240,7 @@ async function runValidation(): Promise<Result[]> {
       'cloud_account_binding',
       'sync_outbox',
       'stickers',
+      'content_cache',
     ])
       expect(
         tables.some((row) => row.name === table),

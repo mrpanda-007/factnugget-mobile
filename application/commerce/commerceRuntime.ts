@@ -1,7 +1,7 @@
 import { getLearningPackIdForCommerceKey } from '../../commerce/catalogue';
 import { createExpoIAPPurchaseProvider } from '@repositories/adapters/ExpoIAPPurchaseProvider';
-import { LegacyContentRepositoryAdapter } from '@repositories/adapters/LegacyContentRepositoryAdapter';
 import { SQLiteEntitlementRepository } from '@repositories/adapters/SQLiteEntitlementRepository';
+import { liveContentRepository } from '../content/contentRuntime';
 import type { Entitlement, EntitlementSource } from '@app-types/domain/commerce';
 import { createEntitlementId, type LearningPackId } from '@app-types/domain/ids';
 import type { ContentRepositoryContract } from '@repositories/contracts/ContentRepositoryContract';
@@ -60,7 +60,7 @@ export function createCommerceDependencies(
   const allowedSources: readonly EntitlementSource[] =
     environment === 'production' ? ['apple', 'google'] : ['apple', 'google', 'development'];
   const entitlements = new SQLiteEntitlementRepository({ allowedSources });
-  const content = new LegacyContentRepositoryAdapter();
+  const content = liveContentRepository;
   const commerce = new CommerceService(
     createExpoIAPPurchaseProvider(),
     entitlements,

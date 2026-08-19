@@ -9,6 +9,7 @@ import { PackPurchaseSection } from '@features/parent/components/PackPurchaseSec
 import { colors, worldThemes } from '@constants/tokens';
 import * as ContentRepository from '@repositories/ContentRepository';
 import { getCommerceDependencies } from '../../../application/commerce/commerceRuntime';
+import { shouldShowPaidPurchaseControls } from '../../../application/release/launchPolicy';
 import { parseLearningPackId } from '@app-types/domain/ids';
 import type { Deck } from '@app-types/Deck';
 import type { Discovery } from '@app-types/Discovery';
@@ -186,15 +187,34 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
         </Card>
       </View>
 
-      <PackPurchaseSection
-        pack={pack}
-        onOpenPack={() =>
-          navigation.navigate('Explore', {
-            screen: 'WorldHome',
-            params: { worldId: deck.category },
-          })
-        }
-      />
+      {shouldShowPaidPurchaseControls() ? (
+        <PackPurchaseSection
+          pack={pack}
+          onOpenPack={() =>
+            navigation.navigate('Explore', {
+              screen: 'WorldHome',
+              params: { worldId: deck.category },
+            })
+          }
+        />
+      ) : (
+        <View className="gap-md">
+          <Text
+            accessibilityRole="header"
+            className="font-fredoka-semibold text-display-md text-ink-900"
+          >
+            Coming later
+          </Text>
+          <Card className="gap-sm" padding="lg">
+            <Text className="font-nunito-semibold text-body-md text-ink-900">
+              This Learning Pack is not available in the free Android launch.
+            </Text>
+            <Text className="font-nunito-regular text-body-sm text-ink-600">
+              There is nothing to buy right now. Available Worlds remain free to explore.
+            </Text>
+          </Card>
+        </View>
+      )}
 
       <Button label="Back to Parent Area" onPress={() => navigation.goBack()} variant="secondary" />
     </ScrollView>

@@ -26,6 +26,7 @@ import { Phase9FirestoreValidationScreen } from '@features/dev/Phase9FirestoreVa
 import { Phase9BackupValidationScreen } from '@features/dev/Phase9BackupValidationScreen';
 import { Phase9MultiDeviceValidationScreen } from '@features/dev/Phase9MultiDeviceValidationScreen';
 import { getParentAccountService } from '../application/sync/parentAccountRuntime';
+import { hydrateContentRuntime, refreshContent } from '../application/content/contentRuntime';
 
 const showPhase7Validation = __DEV__ && process.env.EXPO_PUBLIC_PHASE7_SQLITE_VALIDATION === 'true';
 const showPhase8Validation =
@@ -85,6 +86,15 @@ function FactNuggetsApp() {
 
   // Auth restoration is intentionally non-blocking: the child app never waits on Firebase.
   useEffect(() => getParentAccountService().start(), []);
+
+  // Content hydration is local-only (SQLite) and fast; the network refresh that
+  // follows it never blocks rendering — the bundled starter is already active
+  // the instant this component mounts (application/content/contentRuntime.ts).
+  useEffect(() => {
+    void hydrateContentRuntime().then(() => {
+      void refreshContent();
+    });
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded && isHydrated) {

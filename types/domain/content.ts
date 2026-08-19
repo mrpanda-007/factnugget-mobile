@@ -14,6 +14,14 @@ export interface WorldBadge {
   title: string;
   icon: string;
   accessibleDescription: string;
+  /**
+   * Real uploaded artwork, when the content source provides one. The current
+   * WorldBadge UI (features/rewards/components/WorldBadge.tsx) renders only
+   * `icon` as emoji text and does not consume this yet — carrying it forward
+   * unused is deliberate so a future UI change does not need a content-layer
+   * change too.
+   */
+  artwork?: ContentImage;
 }
 
 export interface World {

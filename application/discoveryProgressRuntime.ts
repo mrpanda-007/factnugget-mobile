@@ -1,9 +1,9 @@
-import { LegacyContentRepositoryAdapter } from '../repositories/adapters/LegacyContentRepositoryAdapter';
 import { SQLiteProgressRepository } from '../repositories/adapters/SQLiteProgressRepository';
+import { liveContentRepository } from './content/contentRuntime';
 import { DiscoveryProgressService } from './DiscoveryProgressService';
 import { getLocalSyncQueueService } from './sync/localSyncQueueRuntime';
 
-const content = new LegacyContentRepositoryAdapter();
+const content = liveContentRepository;
 const progress = new SQLiteProgressRepository();
 const service = new DiscoveryProgressService({
   content,

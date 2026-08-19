@@ -10,4 +10,8 @@ describe('Expo application identity', () => {
   it('keeps the approved FactNuggets display name', () => {
     expect(appConfig.expo.name).toBe('FactNuggets');
   });
+
+  it('applies the fail-closed Android backup policy during prebuild', () => {
+    expect(appConfig.expo.plugins).toContain('./plugins/withAndroidBackupPolicy');
+  });
 });

@@ -11,6 +11,11 @@ import { WorldBadge } from '@features/rewards/components/WorldBadge';
 import { RestorePurchasesSection } from '@features/parent/components/RestorePurchasesSection';
 import { BackupAndSyncSection } from '@features/parent/components/BackupAndSyncSection';
 import { colors } from '@constants/tokens';
+import { LegalLinksSection } from '@features/parent/components/LegalLinksSection';
+import {
+  isBackupAndSyncEnabled,
+  shouldShowPaidPurchaseControls,
+} from '../../../application/release/launchPolicy';
 import type { ParentScreenProps } from '@navigation/types';
 import { useExplorerStore } from '@store/useExplorerStore';
 
@@ -314,9 +319,9 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
         </View>
       ) : null}
 
-      <RestorePurchasesSection onRestored={refresh} />
+      {shouldShowPaidPurchaseControls() ? <RestorePurchasesSection onRestored={refresh} /> : null}
 
-      <BackupAndSyncSection />
+      {isBackupAndSyncEnabled() ? <BackupAndSyncSection /> : null}
 
       <View className="gap-md">
         <Text
@@ -343,6 +348,8 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
           />
         </Card>
       </View>
+
+      <LegalLinksSection />
     </ScrollView>
   );
 }
