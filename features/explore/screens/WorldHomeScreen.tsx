@@ -7,20 +7,20 @@ import { Button } from '@components/Button';
 import { ProgressBar } from '@components/ProgressBar';
 import { WorldBackground } from '@components/WorldBackground';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
-import { colors, elevation, fontFamily, radius, spacing, worldThemes } from '@constants/tokens';
+import { colors, elevation, fontFamily, radius, spacing, themeForWorldId } from '@constants/tokens';
 import { useWorldHome } from '@features/explore/hooks/useWorldHome';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import type { ExploreScreenProps } from '@navigation/types';
 
 export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'WorldHome'>) {
   const { worldId } = route.params;
-  const theme = worldThemes[worldId];
+  const theme = themeForWorldId(worldId);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const {
     isLoading,
-    category,
-    deck,
+    world,
+    pack,
     deckProgress,
     worldBadge,
     discoveries,
@@ -37,16 +37,16 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
   );
 
   useEffect(() => {
-    if (accessState !== 'locked' || !deck) return;
+    if (accessState !== 'locked' || !pack) return;
     navigation.navigate('Parent', {
       screen: 'Area',
       params: {
-        deckId: deck.id,
-        requestedPackTitle: deck.title,
+        deckId: pack.id,
+        requestedPackTitle: pack.title,
         requestId: String(Date.now()),
       },
     });
-  }, [accessState, deck, navigation]);
+  }, [accessState, pack, navigation]);
 
   if (accessState !== 'allowed') {
     return <View className="flex-1 bg-cream" />;
@@ -54,8 +54,8 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
 
   const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
   const discoveredCount = deckProgress?.completedDiscoveryIds.length ?? 0;
-  const worldName = (category?.title ?? theme.label).replace(' World', '');
-  const worldTitle = category?.title ?? theme.label;
+  const worldName = (world?.title ?? theme.label).replace(' World', '');
+  const worldTitle = world?.title ?? theme.label;
   const worldCompleted = Boolean(worldBadge);
   const actionLabel = worldCompleted
     ? `VISIT MY ${worldName.toLocaleUpperCase()} DISCOVERIES`
@@ -66,22 +66,22 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
         : 'START DISCOVERING';
 
   const handlePrimaryAction = async () => {
-    if (!deck) return;
+    if (!pack) return;
     if (worldCompleted) {
       navigation.navigate('Collection');
       return;
     }
-    await ProgressRepository.startOrTouchDeck(deck.id);
+    await ProgressRepository.startOrTouchDeck(pack.id);
     navigation.navigate('DiscoveryCard', {
-      deckId: deck.id,
+      deckId: pack.id,
       discoveryId: nextDiscovery?.id,
     });
   };
 
   const handleReplay = () => {
-    if (!deck || !discoveries[0]) return;
+    if (!pack || !discoveries[0]) return;
     navigation.navigate('DiscoveryCard', {
-      deckId: deck.id,
+      deckId: pack.id,
       discoveryId: discoveries[0].id,
       replay: true,
     });
@@ -140,11 +140,11 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
               textAlign: 'center',
             }}
           >
-            {category?.tagline ?? `Discover something amazing in ${worldTitle}.`}
+            {world?.tagline ?? `Discover something amazing in ${worldTitle}.`}
           </Text>
         </View>
 
-        {!isLoading && deck ? (
+        {!isLoading && pack ? (
           <View
             style={[
               elevation.raised,
@@ -175,20 +175,20 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
                   fontSize: 27,
                 }}
               >
-                {deck.title}
+                {pack.title}
               </Text>
               <Text
                 style={{ color: colors.ink600, fontFamily: fontFamily.bodySemiBold, fontSize: 16 }}
               >
-                {deck.discoveryIds.length} discoveries
+                {discoveries.length} discoveries
               </Text>
             </View>
 
             {deckProgress ? (
               <ProgressBar
-                progress={deck.discoveryIds.length ? discoveredCount / deck.discoveryIds.length : 0}
+                progress={discoveries.length ? discoveredCount / discoveries.length : 0}
                 color={theme.primary}
-                label={`${discoveredCount} of ${deck.discoveryIds.length} discovered`}
+                label={`${discoveredCount} of ${discoveries.length} discovered`}
               />
             ) : null}
 
@@ -213,6 +213,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
                   >
                     <DiscoveryIllustration
                       discovery={discovery}
+                      worldId={worldId}
                       size={Math.min(width >= 520 ? 82 : 96, width * 0.24)}
                       hidden={!discovered}
                     />
@@ -297,7 +298,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
                     },
                   ]}
                 >
-                  <DiscoveryIllustration discovery={discovery} size={92} />
+                  <DiscoveryIllustration discovery={discovery} worldId={worldId} size={92} />
                   <Text
                     style={{
                       color: colors.ink900,

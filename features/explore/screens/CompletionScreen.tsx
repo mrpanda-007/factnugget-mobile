@@ -3,14 +3,15 @@ import { View } from 'react-native';
 
 import { JourneyCompletionScene } from '@components/JourneyCompletionScene';
 import { useWorldSummaries } from '@features/explore/hooks/useWorldSummaries';
-import * as ContentRepository from '@repositories/ContentRepository';
+import { liveContentRepository } from '../../../application/content/contentRuntime';
 import * as ProgressRepository from '@repositories/ProgressRepository';
-import type { Deck } from '@app-types/Deck';
-import type { Discovery } from '@app-types/Discovery';
+import { parseLearningPackId } from '@app-types/domain/ids';
+import type { Discovery, LearningPack, World } from '@app-types/domain/content';
 import type { ExploreScreenProps } from '@navigation/types';
 
 interface CompletionData {
-  deck: Deck;
+  world: World;
+  pack: LearningPack;
   discoveries: Discovery[];
   badgePersisted: boolean;
 }
@@ -23,13 +24,22 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      ContentRepository.getDeck(deckId),
-      ContentRepository.getDiscoveriesForDeck(deckId),
-    ]).then(async ([deck, discoveries]) => {
-      if (!cancelled && deck) {
-        const badge = await ProgressRepository.getWorldBadge(deck.category);
-        if (!cancelled) setData({ deck, discoveries, badgePersisted: Boolean(badge) });
+    const packId = parseLearningPackId(deckId);
+    liveContentRepository.getLearningPack(packId).then(async (pack) => {
+      if (cancelled || !pack) return;
+      const [world, packDiscoveries] = await Promise.all([
+        liveContentRepository.getWorld(pack.worldId),
+        liveContentRepository.listPackDiscoveries(packId),
+      ]);
+      if (cancelled || !world) return;
+      const badge = await ProgressRepository.getWorldBadge(world.id);
+      if (!cancelled) {
+        setData({
+          world,
+          pack,
+          discoveries: packDiscoveries.map(({ discovery }) => discovery),
+          badgePersisted: Boolean(badge),
+        });
       }
     });
     return () => {
@@ -43,7 +53,7 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
         ? (summaries.find(
             (summary) =>
               !summary.locked &&
-              summary.category.id !== data.deck.category &&
+              summary.world.id !== data.world.id &&
               summary.status !== 'completed',
           ) ?? null)
         : null,
@@ -58,7 +68,7 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
 
   return (
     <JourneyCompletionScene
-      deck={data.deck}
+      world={data.world}
       discoveries={data.discoveries}
       badgeEarnedNow={badgeEarnedNow}
       nextWorld={nextWorld}
@@ -68,7 +78,7 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
       }}
       onExploreNext={() => {
         if (nextWorld) {
-          navigation.replace('WorldHome', { worldId: nextWorld.category.id });
+          navigation.replace('WorldHome', { worldId: nextWorld.world.id });
         } else {
           resetExplore();
         }

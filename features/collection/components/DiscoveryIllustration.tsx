@@ -3,10 +3,17 @@ import { Image, Text, View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 
 import { colors } from '@constants/tokens';
-import type { Discovery } from '@app-types/Discovery';
+import type { ContentImage, Discovery } from '@app-types/domain/content';
 
 interface Props {
-  discovery: Pick<Discovery, 'id' | 'category' | 'emoji' | 'heroImage' | 'images' | 'title'>;
+  discovery: Pick<Discovery, 'id' | 'title'> & { images: ContentImage[]; fallbackEmoji: string };
+  /**
+   * A World's themeKey (preferred) or id — see constants/tokens.ts#themeForWorldId.
+   * The canonical Discovery is deliberately world-agnostic (it can be reused
+   * across Packs/Worlds), so the theme/bespoke-art context that used to live
+   * on `discovery.category` must come from the caller's own World/Pack scope.
+   */
+  worldId: string;
   size: number;
   hidden?: boolean;
 }
@@ -112,10 +119,10 @@ function SpaceObject({ id }: { id: string }) {
   );
 }
 
-export function DiscoveryIllustration({ discovery, size, hidden = false }: Props) {
+export function DiscoveryIllustration({ discovery, worldId, size, hidden = false }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
-  const imageUrl = discovery.heroImage ?? discovery.images[0] ?? null;
-  const background = discovery.category === 'space' ? colors.cosmic50 : colors.ocean50;
+  const imageUrl = discovery.images[0]?.url ?? null;
+  const background = worldId === 'space' ? colors.cosmic50 : colors.ocean50;
 
   if (!hidden && imageUrl && !imageFailed) {
     return (
@@ -140,7 +147,7 @@ export function DiscoveryIllustration({ discovery, size, hidden = false }: Props
     );
   }
 
-  const hasBespokeArt = discovery.category === 'ocean' || discovery.category === 'space';
+  const hasBespokeArt = worldId === 'ocean' || worldId === 'space';
 
   return (
     <View
@@ -152,7 +159,7 @@ export function DiscoveryIllustration({ discovery, size, hidden = false }: Props
         <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityElementsHidden>
           <Circle cx={50} cy={50} r={48} fill={hidden ? colors.sand : background} />
           <G opacity={hidden ? 0.16 : 1}>
-            {discovery.category === 'ocean' ? (
+            {worldId === 'ocean' ? (
               <OceanObject id={discovery.id} />
             ) : (
               <SpaceObject id={discovery.id} />
@@ -184,7 +191,7 @@ export function DiscoveryIllustration({ discovery, size, hidden = false }: Props
           }}
         >
           <Text style={{ fontSize: size * 0.5, opacity: hidden ? 0.16 : 1 }}>
-            {hidden ? '?' : discovery.emoji}
+            {hidden ? '?' : discovery.fallbackEmoji}
           </Text>
         </View>
       )}

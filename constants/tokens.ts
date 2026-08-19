@@ -134,6 +134,17 @@ export const worldThemes: Record<WorldId, WorldTheme> = {
   },
 } as const;
 
+/**
+ * Safe theme lookup for a canonical `World.themeKey` (types/domain/ids.ts's
+ * `WorldId` is an open branded string validated only by a regex — not the
+ * closed 5-value union above). Never index `worldThemes` directly with a
+ * canonical id/themeKey; use this instead, so unrecognised content degrades to
+ * a theme rather than a runtime crash or a type error.
+ */
+export function themeForWorldId(themeKey: string): WorldTheme {
+  return (worldThemes as Record<string, WorldTheme>)[themeKey] ?? worldThemes.ocean;
+}
+
 // ---------------------------------------------------------------------------
 // Ollie's Discovery Island — first-app-open scene palette
 // ---------------------------------------------------------------------------

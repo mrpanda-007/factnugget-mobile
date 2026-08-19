@@ -78,8 +78,8 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
       navigation.navigate('Parent', {
         screen: 'Area',
         params: {
-          deckId: collection.deck.id,
-          requestedPackTitle: collection.deck.title,
+          deckId: collection.pack.id,
+          requestedPackTitle: collection.pack.title,
           requestId: String(Date.now()),
         },
       });
@@ -87,7 +87,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
     }
     navigation.navigate('Explore', {
       screen: 'WorldHome',
-      params: { worldId: collection.category.id },
+      params: { worldId: collection.world.id },
     });
   };
 
@@ -218,7 +218,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
             <Animated.View entering={entrance.delay(reducedMotion ? 0 : 90)}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`New discovery. ${newestDiscovery.discovery.title}. ${newestDiscovery.discovery.funFact}. Tap to remember.`}
+                accessibilityLabel={`New discovery. ${newestDiscovery.discovery.title}. ${newestDiscovery.discovery.headlineFact}. Tap to remember.`}
                 onPress={() => {
                   setSelectedDiscoveryId(newestDiscovery.discovery.id);
                   setSelectedCollection(newestDiscovery.collection);
@@ -236,6 +236,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
               >
                 <DiscoveryIllustration
                   discovery={newestDiscovery.discovery}
+                  worldId={newestDiscovery.collection.world.themeKey}
                   size={Math.min(140, width * 0.34)}
                 />
                 <View
@@ -273,7 +274,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
                       textAlign: width >= 520 ? 'left' : 'center',
                     }}
                   >
-                    {newestDiscovery.discovery.funFact}
+                    {newestDiscovery.discovery.headlineFact}
                   </Text>
                   <Text
                     style={{
@@ -382,10 +383,10 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
                 {completedCollections.map((collection) => (
                   <View key={collection.id} style={{ flex: 1 }}>
                     <WorldBadge
-                      worldId={collection.category.id}
-                      worldTitle={collection.category.title}
-                      title={collection.deck.rewardBadge.label}
-                      icon={collection.deck.rewardBadge.icon}
+                      worldId={collection.world.themeKey}
+                      worldTitle={collection.world.title}
+                      title={collection.world.badge.title}
+                      icon={collection.world.badge.icon}
                     />
                   </View>
                 ))}
@@ -417,14 +418,14 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
             >
               {nextCollection
                 ? nextCollection.status === 'locked'
-                  ? `${nextCollection.deck.title} is a new world waiting to be explored.`
-                  : `What amazing thing will you find in ${nextCollection.deck.title}?`
+                  ? `${nextCollection.pack.title} is a new world waiting to be explored.`
+                  : `What amazing thing will you find in ${nextCollection.pack.title}?`
                 : 'Choose a world and see what amazing thing you find next.'}
             </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
-                nextCollection ? `Open ${nextCollection.deck.title}` : 'Choose a discovery world'
+                nextCollection ? `Open ${nextCollection.pack.title}` : 'Choose a discovery world'
               }
               onPress={() => {
                 if (nextCollection) {
@@ -469,8 +470,8 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
           navigation.navigate('Parent', {
             screen: 'Area',
             params: {
-              deckId: selectedCollection.deck.id,
-              requestedPackTitle: selectedCollection.deck.title,
+              deckId: selectedCollection.pack.id,
+              requestedPackTitle: selectedCollection.pack.title,
               requestId: String(Date.now()),
             },
           });

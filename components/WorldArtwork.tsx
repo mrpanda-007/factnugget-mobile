@@ -1,9 +1,10 @@
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
-import { colors, type WorldId } from '@constants/tokens';
+import { colors } from '@constants/tokens';
 
 interface WorldArtworkProps {
-  worldId: WorldId;
+  /** A World's themeKey (or id) — an open string, matched against known theme keys below. */
+  worldId: string;
   width: number | string;
   height: number | string;
 }

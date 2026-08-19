@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@components/Button';
 import { ProgressBar } from '@components/ProgressBar';
 import { WorldArtwork } from '@components/WorldArtwork';
-import { colors, elevation, fontFamily, radius, spacing, worldThemes } from '@constants/tokens';
+import { colors, elevation, fontFamily, radius, spacing, themeForWorldId } from '@constants/tokens';
 import type { ExplorerCollection } from '@features/collection/types';
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function FeaturedCollection({ collection, onContinue }: Props) {
-  const theme = worldThemes[collection.category.id];
+  const theme = themeForWorldId(collection.world.themeKey);
   const completed = collection.status === 'completed';
   const nextDiscovery = collection.discoveries.find(
     (discovery) => !collection.discoveredIds.has(discovery.id),
@@ -25,7 +25,7 @@ export function FeaturedCollection({ collection, onContinue }: Props) {
     >
       <View style={{ minHeight: 390, borderRadius: radius.xl, overflow: 'hidden' }}>
         <View style={{ height: 220 }}>
-          <WorldArtwork worldId={collection.category.id} width="100%" height="100%" />
+          <WorldArtwork worldId={collection.world.themeKey} width="100%" height="100%" />
           <LinearGradient
             colors={['transparent', `${colors.ink900}CC`]}
             style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 88 }}
@@ -40,7 +40,7 @@ export function FeaturedCollection({ collection, onContinue }: Props) {
               fontSize: 28,
             }}
           >
-            {collection.deck.title}
+            {collection.pack.title}
           </Text>
         </View>
         <View style={{ backgroundColor: colors.surface, padding: spacing.xl, gap: spacing.lg }}>
@@ -89,14 +89,14 @@ export function FeaturedCollection({ collection, onContinue }: Props) {
           <Button
             label={
               completed
-                ? `Visit ${collection.category.title} Again`
+                ? `Visit ${collection.world.title} Again`
                 : collection.discoveredCount > 0
                   ? nextDiscovery
                     ? `Continue with ${nextDiscovery.title}`
-                    : `Visit ${collection.category.title}`
+                    : `Visit ${collection.world.title}`
                   : nextDiscovery
                     ? `Start with ${nextDiscovery.title}`
-                    : `Visit ${collection.category.title}`
+                    : `Visit ${collection.world.title}`
             }
             color={theme.primary}
             onPress={onContinue}

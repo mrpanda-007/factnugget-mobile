@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
-import * as ContentRepository from '@repositories/ContentRepository';
+import { liveContentRepository } from '../../../application/content/contentRuntime';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
-import { parseLearningPackId } from '@app-types/domain/ids';
+import { parseDiscoveryId } from '@app-types/domain/ids';
 import type { CollectedDiscovery } from '@app-types/Progress';
 import type { CollectionsState, ExplorerCollection } from '@features/collection/types';
 
@@ -22,17 +22,15 @@ let collectionIdsSeenThisSession: Set<string> | null = null;
 
 function newestUnseen(collection: CollectedDiscovery[]) {
   const seen = collectionIdsSeenThisSession ?? new Set<string>();
-  return (
-    [...collection]
-      .filter((item) => !seen.has(item.discoveryId))
-      .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt))[0]?.discoveryId ??
-    null
-  );
+  const newest = [...collection]
+    .filter((item) => !seen.has(item.discoveryId))
+    .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt))[0]?.discoveryId;
+  return newest ? parseDiscoveryId(newest) : null;
 }
 
-function featuredCollection(collections: ExplorerCollection[], recentDeckId: string | null) {
+function featuredCollection(collections: ExplorerCollection[], recentPackId: string | null) {
   return (
-    collections.find((item) => item.deck.id === recentDeckId && item.status !== 'locked') ??
+    collections.find((item) => item.pack.id === recentPackId && item.status !== 'locked') ??
     collections.find((item) => item.status === 'in_progress') ??
     collections.find((item) => item.status === 'completed') ??
     collections.find((item) => item.status !== 'locked') ??
@@ -50,27 +48,26 @@ export function useCollections() {
     setState((current) => ({ ...current, isLoading: true, loadFailed: false }));
 
     try {
-      const [categories, collected, recentDeckId] = await Promise.all([
-        ContentRepository.getCategories(),
+      const [worlds, collected, recentPackId] = await Promise.all([
+        liveContentRepository.listWorlds(),
         ProgressRepository.getCollection(),
         ProgressRepository.getMostRecentlyActiveDeckId(),
       ]);
       const collectedById = new Map(collected.map((item) => [item.discoveryId, item.collectedAt]));
 
       const nested = await Promise.all(
-        categories.map(async (category) => {
-          const decks = await ContentRepository.getDecksForCategory(category.id);
+        worlds.map(async (world) => {
+          const packs = await liveContentRepository.listLearningPacksForWorld(world.id);
           return Promise.all(
-            decks.map(async (deck): Promise<ExplorerCollection> => {
-              const access = await getLearningPackAccessService().getLearningPackAccess(
-                parseLearningPackId(deck.id),
-              );
+            packs.map(async (pack): Promise<ExplorerCollection> => {
+              const access = await getLearningPackAccessService().getLearningPackAccess(pack.id);
               const locked = access.state !== 'allowed';
-              const [discoveries, progress, badge] = await Promise.all([
-                ContentRepository.getDiscoveriesForDeck(deck.id),
-                locked ? Promise.resolve(null) : ProgressRepository.getDeckProgress(deck.id),
-                locked ? Promise.resolve(null) : ProgressRepository.getWorldBadge(category.id),
+              const [packDiscoveries, progress, badge] = await Promise.all([
+                liveContentRepository.listPackDiscoveries(pack.id),
+                locked ? Promise.resolve(null) : ProgressRepository.getDeckProgress(pack.id),
+                locked ? Promise.resolve(null) : ProgressRepository.getWorldBadge(world.id),
               ]);
+              const discoveries = packDiscoveries.map(({ discovery }) => discovery);
               const discoveredIds = new Set(
                 discoveries.filter((item) => collectedById.has(item.id)).map((item) => item.id),
               );
@@ -80,7 +77,7 @@ export function useCollections() {
                   discovery,
                   collectedAt: collectedById.get(discovery.id)!,
                 }));
-              const totalCount = Math.max(deck.discoveryIds.length, discoveries.length);
+              const totalCount = discoveries.length;
               const discoveredCount = discoveredIds.size;
               const status = locked
                 ? 'locked'
@@ -91,9 +88,9 @@ export function useCollections() {
                     : 'not_started';
 
               return {
-                id: deck.id,
-                category,
-                deck,
+                id: pack.id,
+                world,
+                pack,
                 discoveries,
                 collectedItems,
                 discoveredIds,
@@ -113,14 +110,14 @@ export function useCollections() {
       const collections = nested.flat().sort((left, right) => {
         if (left.status === 'locked' && right.status !== 'locked') return 1;
         if (left.status !== 'locked' && right.status === 'locked') return -1;
-        return left.deck.displayOrder - right.deck.displayOrder;
+        return left.pack.sortOrder - right.pack.sortOrder;
       });
       const newestDiscoveryId = newestUnseen(collected);
       collectionIdsSeenThisSession = new Set(collectedById.keys());
 
       setState({
         collections,
-        featured: featuredCollection(collections, recentDeckId),
+        featured: featuredCollection(collections, recentPackId),
         totalDiscovered: collectedById.size,
         totalAvailable: collections.reduce((sum, item) => sum + item.totalCount, 0),
         newestDiscoveryId,

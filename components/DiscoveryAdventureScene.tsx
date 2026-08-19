@@ -9,14 +9,13 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
-import type { WorldId } from '@constants/tokens';
-
 interface AdventureBackdropProps {
-  worldId: WorldId;
+  /** A World's themeKey (preferred) or id — see constants/tokens.ts#themeForWorldId. */
+  worldId: string;
 }
 
 interface DiscoveryHeroArtProps {
-  worldId: WorldId;
+  worldId: string;
   size: number;
 }
 

@@ -3,7 +3,7 @@ import Animated from 'react-native-reanimated';
 
 import { WorldArtwork } from '@components/WorldArtwork';
 import { usePressScale } from '@hooks/usePressScale';
-import { colors, elevation, fontFamily, radius, spacing, worldThemes } from '@constants/tokens';
+import { colors, elevation, fontFamily, radius, spacing, themeForWorldId } from '@constants/tokens';
 import type { ExplorerCollection } from '@features/collection/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -16,7 +16,7 @@ interface Props {
 
 export function CollectionBookCard({ collection, width, onPress }: Props) {
   const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.98);
-  const theme = worldThemes[collection.category.id];
+  const theme = themeForWorldId(collection.world.themeKey);
   const locked = collection.status === 'locked';
   const completed = collection.status === 'completed';
 
@@ -26,7 +26,7 @@ export function CollectionBookCard({ collection, width, onPress }: Props) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${collection.deck.title}. ${locked ? 'A new world to discover. Grown-up preview available.' : `${collection.discoveredCount} of ${collection.totalCount} discoveries found.`}`}
+      accessibilityLabel={`${collection.pack.title}. ${locked ? 'A new world to discover. Grown-up preview available.' : `${collection.discoveredCount} of ${collection.totalCount} discoveries found.`}`}
       style={[
         elevation.resting,
         animatedStyle,
@@ -41,7 +41,7 @@ export function CollectionBookCard({ collection, width, onPress }: Props) {
           overflow: 'hidden',
         }}
       >
-        <WorldArtwork worldId={collection.category.id} width="100%" height="100%" />
+        <WorldArtwork worldId={collection.world.themeKey} width="100%" height="100%" />
         {completed ? (
           <View
             style={{
@@ -88,7 +88,7 @@ export function CollectionBookCard({ collection, width, onPress }: Props) {
           style={{ color: colors.ink900, fontFamily: fontFamily.displaySemiBold, fontSize: 20 }}
           numberOfLines={1}
         >
-          {collection.deck.title}
+          {collection.pack.title}
         </Text>
         <Text
           style={{ color: colors.ink600, fontFamily: fontFamily.bodySemiBold, fontSize: 13 }}

@@ -11,16 +11,15 @@ import {
   fontFamily,
   radius,
   spacing,
-  worldThemes,
+  themeForWorldId,
 } from '@constants/tokens';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
 import type { WorldSummary } from '@features/explore/hooks/useWorldSummaries';
-import type { Deck } from '@app-types/Deck';
-import type { Discovery } from '@app-types/Discovery';
+import type { Discovery, World } from '@app-types/domain/content';
 
 interface JourneyCompletionSceneProps {
-  deck: Deck;
+  world: World;
   discoveries: Discovery[];
   badgeEarnedNow: boolean;
   nextWorld: WorldSummary | null;
@@ -34,7 +33,7 @@ interface JourneyCompletionSceneProps {
  * is the only reward represented here or later in My Discoveries.
  */
 export function JourneyCompletionScene({
-  deck,
+  world,
   discoveries,
   badgeEarnedNow,
   nextWorld,
@@ -46,8 +45,8 @@ export function JourneyCompletionScene({
   const reducedMotion = useReducedMotion();
   const [badgeVisible, setBadgeVisible] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
-  const theme = worldThemes[deck.category];
-  const worldTitle = theme.label;
+  const theme = themeForWorldId(world.themeKey);
+  const worldTitle = world.title;
   const contentWidth = Math.min(width, 720);
   const horizontalPadding = width >= 700 ? spacing['2xl'] : spacing.lg;
   const discoveryWidth =
@@ -60,7 +59,7 @@ export function JourneyCompletionScene({
     const controlsDelay = reducedMotion ? 0 : badgeEarnedNow ? 1700 : 250;
     const completionAnnouncement = badgeEarnedNow
       ? `${worldTitle} complete. You found all ${discoveries.length} discoveries.`
-      : `${worldTitle} explored again. ${deck.rewardBadge.label} already earned.`;
+      : `${worldTitle} explored again. ${world.badge.title} already earned.`;
 
     const announcementTimer = setTimeout(
       () => {
@@ -71,7 +70,7 @@ export function JourneyCompletionScene({
     const badgeTimer = setTimeout(() => {
       setBadgeVisible(true);
       if (badgeEarnedNow && !reducedMotion) {
-        AccessibilityInfo.announceForAccessibility(`${deck.rewardBadge.label} earned.`);
+        AccessibilityInfo.announceForAccessibility(`${world.badge.title} earned.`);
       }
     }, badgeDelay);
     const controlsTimer = setTimeout(() => setControlsVisible(true), controlsDelay);
@@ -81,7 +80,7 @@ export function JourneyCompletionScene({
       clearTimeout(badgeTimer);
       clearTimeout(controlsTimer);
     };
-  }, [badgeEarnedNow, deck.rewardBadge.label, discoveries.length, reducedMotion, worldTitle]);
+  }, [badgeEarnedNow, world.badge.title, discoveries.length, reducedMotion, worldTitle]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
@@ -166,6 +165,7 @@ export function JourneyCompletionScene({
               >
                 <DiscoveryIllustration
                   discovery={discovery}
+                  worldId={world.themeKey}
                   size={Math.min(discoveryWidth * 0.68, 96)}
                 />
                 <Text
@@ -192,10 +192,10 @@ export function JourneyCompletionScene({
             style={{ gap: spacing.md }}
           >
             <WorldBadge
-              worldId={deck.category}
+              worldId={world.themeKey}
               worldTitle={worldTitle}
-              title={deck.rewardBadge.label}
-              icon={deck.rewardBadge.icon}
+              title={world.badge.title}
+              icon={world.badge.icon}
               variant="hero"
               statusLabel={badgeEarnedNow ? 'Badge earned' : 'Badge already earned'}
             />
@@ -224,7 +224,7 @@ export function JourneyCompletionScene({
             <Button
               label={
                 nextWorld
-                  ? `EXPLORE ${nextWorld.category.title.toLocaleUpperCase()}`
+                  ? `EXPLORE ${nextWorld.world.title.toLocaleUpperCase()}`
                   : 'EXPLORE ANOTHER WORLD'
               }
               variant="secondary"

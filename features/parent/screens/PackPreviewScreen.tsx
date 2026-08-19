@@ -6,19 +6,17 @@ import { Card } from '@components/Card';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
 import { PackPurchaseSection } from '@features/parent/components/PackPurchaseSection';
-import { colors, worldThemes } from '@constants/tokens';
-import * as ContentRepository from '@repositories/ContentRepository';
+import { colors, themeForWorldId } from '@constants/tokens';
+import { liveContentRepository } from '../../../application/content/contentRuntime';
 import { getCommerceDependencies } from '../../../application/commerce/commerceRuntime';
 import { shouldShowPaidPurchaseControls } from '../../../application/release/launchPolicy';
 import { parseLearningPackId } from '@app-types/domain/ids';
-import type { Deck } from '@app-types/Deck';
-import type { Discovery } from '@app-types/Discovery';
-import type { LearningPack } from '@app-types/domain/content';
+import type { Discovery, LearningPack, World } from '@app-types/domain/content';
 import type { ParentScreenProps } from '@navigation/types';
 
 function readingTimeLabel(discoveries: Discovery[]) {
   const seconds = discoveries.reduce(
-    (total, discovery) => total + discovery.estimatedReadingTime,
+    (total, discovery) => total + discovery.estimatedReadingSeconds,
     0,
   );
   if (seconds <= 0) return null;
@@ -32,21 +30,23 @@ function readingTimeLabel(discoveries: Discovery[]) {
  */
 export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'PackPreview'>) {
   const { deckId } = route.params;
-  const [deck, setDeck] = useState<Deck | null>(null);
+  const [world, setWorld] = useState<World | null>(null);
   const [pack, setPack] = useState<LearningPack | null>(null);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    const packId = parseLearningPackId(deckId);
     Promise.all([
-      ContentRepository.getDeck(deckId),
-      ContentRepository.getDiscoveriesForDeck(deckId),
-      getCommerceDependencies().content.getLearningPack(parseLearningPackId(deckId)),
-    ]).then(([nextDeck, nextDiscoveries, nextPack]) => {
+      liveContentRepository.listPackDiscoveries(packId),
+      getCommerceDependencies().content.getLearningPack(packId),
+    ]).then(async ([packDiscoveries, nextPack]) => {
+      if (cancelled) return;
+      const nextWorld = nextPack ? await liveContentRepository.getWorld(nextPack.worldId) : null;
       if (!cancelled) {
-        setDeck(nextDeck);
-        setDiscoveries(nextDiscoveries);
+        setWorld(nextWorld);
+        setDiscoveries(packDiscoveries.map(({ discovery }) => discovery));
         setPack(nextPack);
         setIsLoading(false);
       }
@@ -66,7 +66,7 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
     );
   }
 
-  if (!deck || !pack) {
+  if (!world || !pack) {
     return (
       <View className="flex-1 items-center justify-center gap-md bg-cream px-xl">
         <Text
@@ -84,8 +84,6 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
     );
   }
 
-  const theme = worldThemes[deck.category];
-
   return (
     <ScrollView
       className="flex-1 bg-cream"
@@ -94,7 +92,7 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
     >
       <View className="items-center gap-sm">
         <Text accessibilityElementsHidden style={{ fontSize: 48 }}>
-          {theme.emoji}
+          {themeForWorldId(world.themeKey).emoji}
         </Text>
         <Text
           accessibilityRole="header"
@@ -132,17 +130,17 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
         <View className="gap-sm">
           {discoveries.map((discovery) => (
             <Card key={discovery.id} padding="md" className="flex-row items-center gap-md">
-              <DiscoveryIllustration discovery={discovery} size={56} />
+              <DiscoveryIllustration discovery={discovery} worldId={world.themeKey} size={56} />
               <View
                 accessible
-                accessibilityLabel={`${discovery.title}. Sample fact: ${discovery.funFact}`}
+                accessibilityLabel={`${discovery.title}. Sample fact: ${discovery.headlineFact}`}
                 className="flex-1 gap-xs"
               >
                 <Text className="font-nunito-extrabold text-body-md text-ink-900">
                   {discovery.title}
                 </Text>
                 <Text className="font-nunito-regular text-body-sm text-ink-600" numberOfLines={2}>
-                  {discovery.funFact}
+                  {discovery.headlineFact}
                 </Text>
               </View>
             </Card>
@@ -161,10 +159,10 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
           Finish every Discovery to earn this World Badge.
         </Text>
         <WorldBadge
-          worldId={deck.category}
-          worldTitle={worldThemes[deck.category].label}
-          title={deck.rewardBadge.label}
-          icon={deck.rewardBadge.icon}
+          worldId={world.themeKey}
+          worldTitle={world.title}
+          title={world.badge.title}
+          icon={world.badge.icon}
           statusLabel="World completion badge"
         />
       </View>
@@ -193,7 +191,7 @@ export function PackPreviewScreen({ navigation, route }: ParentScreenProps<'Pack
           onOpenPack={() =>
             navigation.navigate('Explore', {
               screen: 'WorldHome',
-              params: { worldId: deck.category },
+              params: { worldId: world.id },
             })
           }
         />

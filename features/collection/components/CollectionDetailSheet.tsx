@@ -13,21 +13,23 @@ import {
   fontFamily,
   radius,
   spacing,
-  worldThemes,
+  themeForWorldId,
 } from '@constants/tokens';
-import type { Discovery } from '@app-types/Discovery';
+import type { Discovery } from '@app-types/domain/content';
 import type { ExplorerCollection } from '@features/collection/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function DiscoveryObject({
   discovery,
+  worldId,
   discovered,
   isNew,
   width,
   onPress,
 }: {
   discovery: Discovery;
+  worldId: string;
   discovered: boolean;
   isNew: boolean;
   width: number;
@@ -39,6 +41,7 @@ function DiscoveryObject({
     <View style={{ alignItems: 'center', gap: spacing.sm, padding: spacing.md }}>
       <DiscoveryIllustration
         discovery={discovery}
+        worldId={worldId}
         size={Math.min(108, width - spacing.xl)}
         hidden={!discovered}
       />
@@ -75,7 +78,7 @@ function DiscoveryObject({
               textAlign: 'center',
             }}
           >
-            {discovery.funFact}
+            {discovery.headlineFact}
           </Text>
           <Text
             style={{ color: colors.ocean700, fontFamily: fontFamily.bodyExtraBold, fontSize: 14 }}
@@ -115,7 +118,7 @@ function DiscoveryObject({
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${discovery.title}. ${discovery.funFact}. Tap to remember this discovery.`}
+      accessibilityLabel={`${discovery.title}. ${discovery.headlineFact}. Tap to remember this discovery.`}
       style={[
         elevation.resting,
         animatedStyle,
@@ -152,7 +155,7 @@ export function CollectionDetailSheet({
 
   const recalledDiscovery =
     collection.discoveries.find((discovery) => discovery.id === initialDiscoveryId) ?? null;
-  const theme = worldThemes[collection.category.id];
+  const theme = themeForWorldId(collection.world.themeKey);
   const contentWidth = Math.min(width, 760) - spacing.xl * 2;
   const columns = width >= 700 ? 3 : 2;
   const tileWidth = (contentWidth - spacing.md * (columns - 1)) / columns;
@@ -198,6 +201,7 @@ export function CollectionDetailSheet({
             >
               <DiscoveryIllustration
                 discovery={recalledDiscovery}
+                worldId={collection.world.themeKey}
                 size={Math.min(width * 0.52, 240)}
               />
             </View>
@@ -221,7 +225,7 @@ export function CollectionDetailSheet({
                 textAlign: 'center',
               }}
             >
-              {recalledDiscovery.funFact}
+              {recalledDiscovery.headlineFact}
             </Text>
             <Text
               style={{
@@ -232,10 +236,10 @@ export function CollectionDetailSheet({
                 textAlign: 'center',
               }}
             >
-              {recalledDiscovery.easyDescription}
+              {recalledDiscovery.explanation}
             </Text>
             <Button
-              label={`Explore ${collection.category.title} Again`}
+              label={`Explore ${collection.world.title} Again`}
               color={theme.primary}
               onPress={onContinue}
             />
@@ -243,7 +247,7 @@ export function CollectionDetailSheet({
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: spacing['4xl'] }}>
             <View style={{ height: width >= 700 ? 300 : 230 }}>
-              <WorldArtwork worldId={collection.category.id} width="100%" height="100%" />
+              <WorldArtwork worldId={collection.world.themeKey} width="100%" height="100%" />
               <Pressable
                 onPress={onClose}
                 accessibilityRole="button"
@@ -290,7 +294,7 @@ export function CollectionDetailSheet({
                     fontSize: 28,
                   }}
                 >
-                  {collection.deck.title}
+                  {collection.pack.title}
                 </Text>
                 <Text
                   style={{
@@ -302,7 +306,7 @@ export function CollectionDetailSheet({
                 >
                   {locked
                     ? 'A beautiful new world is waiting to be explored.'
-                    : collection.deck.subtitle}
+                    : collection.pack.subtitle}
                 </Text>
               </View>
 
@@ -331,6 +335,7 @@ export function CollectionDetailSheet({
                       <DiscoveryObject
                         key={discovery.id}
                         discovery={discovery}
+                        worldId={collection.world.themeKey}
                         discovered={collection.discoveredIds.has(discovery.id)}
                         isNew={discovery.id === newestDiscoveryId}
                         width={tileWidth}
@@ -341,7 +346,7 @@ export function CollectionDetailSheet({
                   <Button
                     label={
                       collection.status === 'completed'
-                        ? `Explore ${collection.category.title} Again`
+                        ? `Explore ${collection.world.title} Again`
                         : 'Continue This World'
                     }
                     color={theme.primary}

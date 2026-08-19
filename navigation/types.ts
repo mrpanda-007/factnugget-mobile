@@ -2,8 +2,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 
-import type { WorldId } from '@constants/tokens';
-
 /**
  * Full route table — docs/design/01-screen-map.md. Extend here whenever a
  * screen is added; every `navigate()` call in the app resolves its types
@@ -30,7 +28,8 @@ export type MainTabParamList = {
 
 export type ExploreStackParamList = {
   DiscoverySelection: undefined;
-  WorldHome: { worldId: WorldId };
+  /** A canonical World's id/themeKey — see constants/tokens.ts#themeForWorldId. */
+  WorldHome: { worldId: string };
   DiscoveryCard: { deckId: string; discoveryId?: string; replay?: boolean };
   Completion: { deckId: string; badgeEarnedNow: boolean };
 };

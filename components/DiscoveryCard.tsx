@@ -13,11 +13,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AdventureBackdrop } from '@components/DiscoveryAdventureScene';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
-import { animationDurations, fontFamily, worldThemes } from '@constants/tokens';
-import type { Discovery } from '@app-types/Discovery';
+import { animationDurations, fontFamily, themeForWorldId } from '@constants/tokens';
+import type { Discovery } from '@app-types/domain/content';
 
 interface DiscoveryCardProps {
   discovery: Discovery;
+  /**
+   * A World's themeKey (preferred) or id — the canonical Discovery is
+   * deliberately world-agnostic, so the theme context must come from the
+   * caller's own World/Pack scope. See constants/tokens.ts#themeForWorldId.
+   */
+  worldId: string;
   position: number;
   total: number;
   collected: boolean;
@@ -35,6 +41,7 @@ interface DiscoveryCardProps {
  */
 export function DiscoveryCard({
   discovery,
+  worldId,
   position,
   total,
   collected,
@@ -44,7 +51,7 @@ export function DiscoveryCard({
   onAcknowledged,
   onClose,
 }: DiscoveryCardProps) {
-  const theme = worldThemes[discovery.category];
+  const theme = themeForWorldId(worldId);
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const { width, height } = useWindowDimensions();
@@ -110,7 +117,7 @@ export function DiscoveryCard({
   return (
     <View style={styles.screen}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <AdventureBackdrop worldId={discovery.category} />
+        <AdventureBackdrop worldId={worldId} />
       </View>
 
       <View style={[styles.topBar, { top: insets.top + 10 }]}>
@@ -152,7 +159,7 @@ export function DiscoveryCard({
                 accessibilityRole="image"
                 accessibilityLabel={`${discovery.title} artwork`}
               >
-                <DiscoveryIllustration discovery={discovery} size={artworkSize} />
+                <DiscoveryIllustration discovery={discovery} worldId={worldId} size={artworkSize} />
               </View>
               <Text style={styles.frontTitle}>{discovery.title}</Text>
               <Text style={styles.frontPrompt}>
@@ -173,12 +180,16 @@ export function DiscoveryCard({
                 accessibilityLabel={`${discovery.title} artwork`}
                 style={styles.revealArtwork}
               >
-                <DiscoveryIllustration discovery={discovery} size={Math.min(artworkSize, 170)} />
+                <DiscoveryIllustration
+                  discovery={discovery}
+                  worldId={worldId}
+                  size={Math.min(artworkSize, 170)}
+                />
               </View>
               <Text style={styles.backTitle}>{discovery.title}</Text>
-              <Text style={styles.funFact}>{discovery.funFact}</Text>
+              <Text style={styles.funFact}>{discovery.headlineFact}</Text>
               <View style={[styles.factRibbon, { borderColor: theme.secondary }]}>
-                <Text style={styles.factRibbonText}>{discovery.easyDescription}</Text>
+                <Text style={styles.factRibbonText}>{discovery.explanation}</Text>
               </View>
               {saveFailed ? (
                 <Text accessibilityRole="alert" style={styles.errorText}>
@@ -215,7 +226,7 @@ export function DiscoveryCard({
           accessibilityLiveRegion="polite"
           style={styles.acknowledgement}
         >
-          <DiscoveryIllustration discovery={discovery} size={76} />
+          <DiscoveryIllustration discovery={discovery} worldId={worldId} size={76} />
           <Text style={styles.addedTitle}>{discovery.title.toLocaleUpperCase()} ADDED!</Text>
           <Text style={styles.addedSubtitle}>It’s now in My Discoveries.</Text>
         </Animated.View>

@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated';
 import { WorldArtwork } from '@components/WorldArtwork';
 import type { WorldSummary } from '@features/explore/hooks/useWorldSummaries';
 import { usePressScale } from '@hooks/usePressScale';
-import { colors, elevation, fontFamily, radius, spacing, worldThemes } from '@constants/tokens';
+import { colors, elevation, fontFamily, radius, spacing, themeForWorldId } from '@constants/tokens';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -17,13 +17,13 @@ interface Props {
 
 export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Props) {
   const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.97);
-  const theme = worldThemes[summary.category.id];
+  const theme = themeForWorldId(summary.world.themeKey);
   const count = summary.discoveriesFound ?? 0;
   const detail = summary.locked
-    ? `${summary.deck.discoveryIds.length} discoveries · Grown-up preview`
+    ? `${summary.discoveryCount} discoveries · Grown-up preview`
     : count > 0
-      ? `${count} of ${summary.deck.discoveryIds.length} discovered`
-      : `${summary.deck.discoveryIds.length} discoveries`;
+      ? `${count} of ${summary.discoveryCount} discovered`
+      : `${summary.discoveryCount} discoveries`;
 
   return (
     <AnimatedPressable
@@ -31,7 +31,7 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${summary.category.title}. ${summary.deck.title}. ${detail}.`}
+      accessibilityLabel={`${summary.world.title}. ${summary.pack.title}. ${detail}.`}
       style={[
         elevation.resting,
         animatedStyle,
@@ -46,7 +46,7 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
           overflow: 'hidden',
         }}
       >
-        <WorldArtwork worldId={summary.category.id} width="100%" height="100%" />
+        <WorldArtwork worldId={summary.world.themeKey} width="100%" height="100%" />
         {summary.locked ? (
           <View
             style={{
@@ -79,12 +79,12 @@ export function WorldChoiceCard({ summary, width, artworkHeight, onPress }: Prop
             textTransform: 'uppercase',
           }}
         >
-          {summary.category.title}
+          {summary.world.title}
         </Text>
         <Text
           style={{ color: colors.ink900, fontFamily: fontFamily.displaySemiBold, fontSize: 20 }}
         >
-          {summary.deck.title}
+          {summary.pack.title}
         </Text>
         <Text
           style={{

@@ -12,8 +12,8 @@ import {
   fontFamily,
   radius,
   spacing,
+  themeForWorldId,
   typeScale,
-  worldThemes,
 } from '@constants/tokens';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -26,7 +26,7 @@ interface Props {
 
 export function ExploreHeroCard({ summary, height, onPress }: Props) {
   const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.97);
-  const theme = worldThemes[summary.category.id];
+  const theme = themeForWorldId(summary.world.themeKey);
   const hasProgress = typeof summary.discoveriesFound === 'number' && summary.discoveriesFound > 0;
   const inProgress = summary.status === 'in_progress';
   const completed = summary.status === 'completed';
@@ -39,13 +39,13 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
           ? hasProgress
             ? `Continue with ${summary.nextDiscoveryTitle}`
             : `Start with ${summary.nextDiscoveryTitle}`
-          : `Visit ${summary.category.title}`
-        : `Visit ${summary.category.title}`;
+          : `Visit ${summary.world.title}`
+        : `Visit ${summary.world.title}`;
   const detail = summary.locked
-    ? `${summary.deck.discoveryIds.length} discoveries · Grown-up preview`
+    ? `${summary.discoveryCount} discoveries · Grown-up preview`
     : inProgress
-      ? `${summary.discoveriesFound ?? 0} of ${summary.deck.discoveryIds.length} discovered`
-      : `${summary.deck.discoveryIds.length} discoveries`;
+      ? `${summary.discoveriesFound ?? 0} of ${summary.discoveryCount} discovered`
+      : `${summary.discoveryCount} discoveries`;
 
   return (
     <AnimatedPressable
@@ -53,7 +53,7 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${summary.category.title}. ${summary.deck.title}. ${detail}. ${action}.`}
+      accessibilityLabel={`${summary.world.title}. ${summary.pack.title}. ${detail}. ${action}.`}
       style={[
         elevation.raised,
         animatedStyle,
@@ -61,7 +61,7 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
       ]}
     >
       <View style={{ flex: 1, minHeight: height, borderRadius: radius.xl, overflow: 'hidden' }}>
-        <WorldArtwork worldId={summary.category.id} width="100%" height="100%" />
+        <WorldArtwork worldId={summary.world.themeKey} width="100%" height="100%" />
         <LinearGradient
           colors={['transparent', `${colors.ink900}E8`]}
           locations={[0.24, 1]}
@@ -86,10 +86,10 @@ export function ExploreHeroCard({ summary, height, onPress }: Props) {
                 textTransform: 'uppercase',
               }}
             >
-              {summary.category.title}
+              {summary.world.title}
             </Text>
             <Text style={[typeScale.displayLg, { color: colors.surface }]}>
-              {summary.deck.title}
+              {summary.pack.title}
             </Text>
             <Text
               style={{

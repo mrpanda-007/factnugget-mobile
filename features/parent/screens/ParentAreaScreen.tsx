@@ -197,10 +197,14 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
                     <View
                       key={discovery.id}
                       accessible
-                      accessibilityLabel={`${discovery.title}. ${discovery.funFact}`}
+                      accessibilityLabel={`${discovery.title}. ${discovery.headlineFact}`}
                       className="flex-row items-center gap-md"
                     >
-                      <DiscoveryIllustration discovery={discovery} size={48} />
+                      <DiscoveryIllustration
+                        discovery={discovery}
+                        worldId={discovery.worldId}
+                        size={48}
+                      />
                       <View className="flex-1 gap-xs">
                         <Text className="font-nunito-extrabold text-body-md text-ink-900">
                           {discovery.title}
@@ -209,7 +213,7 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
                           className="font-nunito-regular text-body-sm text-ink-600"
                           numberOfLines={2}
                         >
-                          {discovery.funFact}
+                          {discovery.headlineFact}
                         </Text>
                       </View>
                     </View>
@@ -220,7 +224,7 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
 
             {progress.badges.map((badge) => (
               <WorldBadge
-                key={badge.deckId}
+                key={badge.worldId}
                 worldId={badge.worldId}
                 worldTitle={badge.worldTitle}
                 title={badge.title}
@@ -312,7 +316,7 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
             </Text>
             <Button
               label={`Preview ${firstLockedPack.title}`}
-              onPress={() => navigation.navigate('PackPreview', { deckId: firstLockedPack.deckId })}
+              onPress={() => navigation.navigate('PackPreview', { deckId: firstLockedPack.packId })}
               variant="secondary"
             />
           </Card>

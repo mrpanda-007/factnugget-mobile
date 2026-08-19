@@ -33,7 +33,7 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
   const { summaries, isLoading, loadFailed, refresh } = useWorldSummaries();
   const hero = useMemo(() => chooseHero(summaries), [summaries]);
   const otherWorlds = useMemo(
-    () => summaries.filter((summary) => summary.deck.id !== hero?.deck.id).slice(0, 3),
+    () => summaries.filter((summary) => summary.pack.id !== hero?.pack.id).slice(0, 3),
     [hero, summaries],
   );
   const returning = summaries.some(
@@ -57,8 +57,8 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
       navigation.navigate('Parent', {
         screen: 'Area',
         params: {
-          deckId: summary.deck.id,
-          requestedPackTitle: summary.deck.title,
+          deckId: summary.pack.id,
+          requestedPackTitle: summary.pack.title,
           requestId: String(Date.now()),
         },
       });
@@ -66,12 +66,12 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
     }
     if (summary.status === 'in_progress' && summary.nextDiscoveryId) {
       navigation.navigate('DiscoveryCard', {
-        deckId: summary.deck.id,
+        deckId: summary.pack.id,
         discoveryId: summary.nextDiscoveryId,
       });
       return;
     }
-    navigation.navigate('WorldHome', { worldId: summary.category.id });
+    navigation.navigate('WorldHome', { worldId: summary.world.id });
   };
 
   if (isLoading && summaries.length === 0) {
@@ -183,7 +183,7 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg }}>
               {otherWorlds.map((summary, index) => (
                 <Animated.View
-                  key={summary.deck.id}
+                  key={summary.pack.id}
                   entering={entrance.delay(reducedMotion ? 0 : 190 + index * 60)}
                 >
                   <WorldChoiceCard

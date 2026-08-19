@@ -1,28 +1,28 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
-import type { WorldId } from '@constants/tokens';
-import * as ContentRepository from '@repositories/ContentRepository';
+import { liveContentRepository } from '../../../application/content/contentRuntime';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
-import { parseLearningPackId } from '@app-types/domain/ids';
-import type { Category } from '@app-types/Category';
-import type { Deck } from '@app-types/Deck';
-import type { Discovery } from '@app-types/Discovery';
+import type { ContentImage } from '@app-types/domain/content';
+import {
+  parseDiscoveryId,
+  type DiscoveryId,
+  type LearningPackId,
+  type WorldId,
+} from '@app-types/domain/ids';
 
 export interface ParentRecentDiscovery {
-  id: string;
+  id: DiscoveryId;
   title: string;
-  funFact: string;
-  emoji: string;
-  category: WorldId;
-  heroImage: string | null;
-  images: string[];
+  headlineFact: string;
+  fallbackEmoji: string;
+  images: ContentImage[];
+  worldId: WorldId;
   collectedAt: string;
 }
 
 export interface ParentBadgeSummary {
-  deckId: string;
   worldId: WorldId;
   worldTitle: string;
   title: string;
@@ -31,7 +31,7 @@ export interface ParentBadgeSummary {
 }
 
 export interface ParentPackSummary {
-  deckId: string;
+  packId: LearningPackId;
   title: string;
   discoveryCount: number;
 }
@@ -54,12 +54,6 @@ const emptyProgress: ParentProgress = {
   lockedPacks: [],
 };
 
-interface DeckContent {
-  category: Category;
-  deck: Deck;
-  discoveries: Discovery[];
-}
-
 /**
  * Parent-only, read-only view of the child&apos;s existing progress. It deliberately
  * derives badge evidence from `completedAt`, the durable completion marker used
@@ -77,57 +71,61 @@ export function useParentProgress() {
     setLoadFailed(false);
 
     try {
-      const categories = await ContentRepository.getCategories();
-      const deckGroups = await Promise.all(
-        categories.map(async (category) => {
-          const decks = await ContentRepository.getDecksForCategory(category.id);
-          return decks.map((deck) => ({ category, deck }));
-        }),
-      );
-      const deckEntries = deckGroups.flat();
-      const deckContent = await Promise.all(
-        deckEntries.map(async ({ category, deck }): Promise<DeckContent> => ({
-          category,
-          deck,
-          discoveries: await ContentRepository.getDiscoveriesForDeck(deck.id),
+      const worlds = await liveContentRepository.listWorlds();
+      const worldPacks = await Promise.all(
+        worlds.map(async (world) => ({
+          world,
+          packs: await liveContentRepository.listLearningPacksForWorld(world.id),
         })),
       );
+
+      const packEntries = worldPacks.flatMap(({ world, packs }) =>
+        packs.map((pack) => ({ world, pack })),
+      );
+      const packContent = await Promise.all(
+        packEntries.map(async ({ world, pack }) => ({
+          world,
+          pack,
+          packDiscoveries: await liveContentRepository.listPackDiscoveries(pack.id),
+        })),
+      );
+
       const lockedPackIds = new Set(
         (
           await Promise.all(
-            deckContent.map(async ({ deck }) => {
-              const access = await getLearningPackAccessService().getLearningPackAccess(
-                parseLearningPackId(deck.id),
-              );
-              return access.state === 'allowed' ? null : deck.id;
+            packContent.map(async ({ pack }) => {
+              const access = await getLearningPackAccessService().getLearningPackAccess(pack.id);
+              return access.state === 'allowed' ? null : pack.id;
             }),
           )
-        ).filter((deckId): deckId is string => deckId !== null),
+        ).filter((packId): packId is LearningPackId => packId !== null),
       );
+
       const [collected, earnedBadges] = await Promise.all([
         ProgressRepository.getCollection(),
         ProgressRepository.getEarnedBadges(),
       ]);
 
       const discoveryById = new Map(
-        deckContent.flatMap(({ discoveries }) =>
-          discoveries.map((discovery) => [discovery.id, discovery]),
+        packContent.flatMap(({ world, packDiscoveries }) =>
+          packDiscoveries.map(
+            ({ discovery }) => [discovery.id, { discovery, worldId: world.id }] as const,
+          ),
         ),
       );
       const badgeByWorldId = new Map(earnedBadges.map((badge) => [badge.worldId, badge]));
 
       const recentDiscoveries = collected
         .map(({ discoveryId, collectedAt }) => {
-          const discovery = discoveryById.get(discoveryId);
-          return discovery
+          const entry = discoveryById.get(parseDiscoveryId(discoveryId));
+          return entry
             ? {
-                id: discovery.id,
-                title: discovery.title,
-                funFact: discovery.funFact,
-                emoji: discovery.emoji,
-                category: discovery.category,
-                heroImage: discovery.heroImage,
-                images: discovery.images,
+                id: entry.discovery.id,
+                title: entry.discovery.title,
+                headlineFact: entry.discovery.headlineFact,
+                fallbackEmoji: entry.discovery.fallbackEmoji,
+                images: entry.discovery.images,
+                worldId: entry.worldId,
                 collectedAt,
               }
             : null;
@@ -136,16 +134,16 @@ export function useParentProgress() {
         .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt))
         .slice(0, 4);
 
+      const worldById = new Map(worlds.map((world) => [world.id, world]));
       const badges = [...badgeByWorldId.entries()]
         .map(([worldId, badge]): ParentBadgeSummary | null => {
-          const entry = deckContent.find(({ category }) => category.id === worldId);
-          return entry
+          const world = worldById.get(worldId);
+          return world
             ? {
-                deckId: entry.deck.id,
-                worldId: entry.category.id,
-                worldTitle: entry.category.title,
-                title: entry.deck.rewardBadge.label,
-                icon: entry.deck.rewardBadge.icon,
+                worldId: world.id,
+                worldTitle: world.title,
+                title: world.badge.title,
+                icon: world.badge.icon,
                 earnedAt: badge.earnedAt,
               }
             : null;
@@ -160,12 +158,12 @@ export function useParentProgress() {
           badgesEarned: badges.length,
           recentDiscoveries,
           badges,
-          lockedPacks: deckContent
-            .filter(({ deck }) => lockedPackIds.has(deck.id))
-            .map(({ deck }) => ({
-              deckId: deck.id,
-              title: deck.title,
-              discoveryCount: deck.discoveryIds.length,
+          lockedPacks: packContent
+            .filter(({ pack }) => lockedPackIds.has(pack.id))
+            .map(({ pack, packDiscoveries }) => ({
+              packId: pack.id,
+              title: pack.title,
+              discoveryCount: packDiscoveries.length,
             })),
         });
         setIsLoading(false);

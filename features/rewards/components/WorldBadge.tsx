@@ -1,11 +1,11 @@
 import { Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { colors, elevation, fontFamily, radius, spacing, worldThemes } from '@constants/tokens';
-import type { WorldId } from '@constants/tokens';
+import { colors, elevation, fontFamily, radius, spacing, themeForWorldId } from '@constants/tokens';
 
 interface WorldBadgeProps {
-  worldId: WorldId;
+  /** A World's themeKey (preferred) or id — see constants/tokens.ts#themeForWorldId. */
+  worldId: string;
   worldTitle: string;
   title: string;
   icon: string;
@@ -21,7 +21,7 @@ export function WorldBadge({
   variant = 'card',
   statusLabel = `Completed ${worldTitle}`,
 }: WorldBadgeProps) {
-  const theme = worldThemes[worldId];
+  const theme = themeForWorldId(worldId);
   const hero = variant === 'hero';
   const artworkSize = hero ? 148 : 68;
 

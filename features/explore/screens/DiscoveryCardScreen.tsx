@@ -2,15 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { DiscoveryCard } from '@components/DiscoveryCard';
-import { worldThemes } from '@constants/tokens';
-import * as ContentRepository from '@repositories/ContentRepository';
+import { liveContentRepository } from '../../../application/content/contentRuntime';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import { getDiscoveryProgressService } from '../../../application/discoveryProgressRuntime';
 import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
-import { parseDiscoveryId, parseLearningPackId } from '@app-types/domain/ids';
+import { parseLearningPackId } from '@app-types/domain/ids';
 import { useExplorerStore } from '@store/useExplorerStore';
-import type { Deck } from '@app-types/Deck';
-import type { Discovery } from '@app-types/Discovery';
+import type { Discovery, LearningPack, World } from '@app-types/domain/content';
 import type { ExploreScreenProps } from '@navigation/types';
 
 type Destination =
@@ -22,7 +20,8 @@ type Destination =
 export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'DiscoveryCard'>) {
   const { deckId, discoveryId, replay = false } = route.params;
   const explorerId = useExplorerStore((state) => state.explorerId);
-  const [deck, setDeck] = useState<Deck | null>(null);
+  const [pack, setPack] = useState<LearningPack | null>(null);
+  const [world, setWorld] = useState<World | null>(null);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [collectedIds, setCollectedIds] = useState<Set<string>>(new Set());
   const [index, setIndex] = useState(0);
@@ -32,19 +31,20 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [deckResult, access] = await Promise.all([
-        ContentRepository.getDeck(deckId),
-        getLearningPackAccessService().getLearningPackAccess(parseLearningPackId(deckId)),
+      const packId = parseLearningPackId(deckId);
+      const [packResult, access] = await Promise.all([
+        liveContentRepository.getLearningPack(packId),
+        getLearningPackAccessService().getLearningPackAccess(packId),
       ]);
       if (cancelled) return;
 
       if (access.state !== 'allowed') {
-        if (deckResult) {
+        if (packResult) {
           navigation.navigate('Parent', {
             screen: 'Area',
             params: {
-              deckId: deckResult.id,
-              requestedPackTitle: deckResult.title,
+              deckId: packResult.id,
+              requestedPackTitle: packResult.title,
               requestId: String(Date.now()),
             },
           });
@@ -54,20 +54,23 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
         return;
       }
 
-      const [discoveryResults, progress] = await Promise.all([
-        ContentRepository.getDiscoveriesForDeck(deckId),
+      const [packDiscoveries, worldResult, progress] = await Promise.all([
+        liveContentRepository.listPackDiscoveries(packId),
+        packResult ? liveContentRepository.getWorld(packResult.worldId) : Promise.resolve(null),
         ProgressRepository.getDeckProgress(deckId),
       ]);
       await ProgressRepository.startOrTouchDeck(deckId);
       if (cancelled) return;
 
+      const discoveryResults = packDiscoveries.map(({ discovery }) => discovery);
       const completed = new Set(progress?.completedDiscoveryIds ?? []);
       const requestedIndex = discoveryId
         ? discoveryResults.findIndex((item) => item.id === discoveryId)
         : -1;
       const firstIncompleteIndex = discoveryResults.findIndex((item) => !completed.has(item.id));
 
-      setDeck(deckResult);
+      setPack(packResult);
+      setWorld(worldResult);
       setDiscoveries(discoveryResults);
       setCollectedIds(completed);
       setIndex(
@@ -84,13 +87,13 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   const currentDiscovery = discoveries[index];
 
   useEffect(() => {
-    if (!explorerId || !deck || !currentDiscovery || replay) return;
+    if (!explorerId || !pack || !currentDiscovery || replay) return;
     void getDiscoveryProgressService().revealDiscovery({
       explorerId,
-      learningPackId: parseLearningPackId(deck.id),
-      discoveryId: parseDiscoveryId(currentDiscovery.id),
+      learningPackId: pack.id,
+      discoveryId: currentDiscovery.id,
     });
-  }, [currentDiscovery, deck, explorerId, replay]);
+  }, [currentDiscovery, pack, explorerId, replay]);
 
   const nextIncompleteIndex = useCallback(
     (ids: Set<string>) => {
@@ -111,13 +114,13 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   }, [collectedIds, currentDiscovery, discoveries, index, nextIncompleteIndex, replay]);
 
   const handleCollect = useCallback(async () => {
-    if (!currentDiscovery || !deck) return;
+    if (!currentDiscovery || !pack) return;
 
     if (!explorerId) throw new Error('An active Explorer is required to collect a Discovery.');
     const result = await getDiscoveryProgressService().collectDiscovery({
       explorerId,
-      learningPackId: parseLearningPackId(deck.id),
-      discoveryId: parseDiscoveryId(currentDiscovery.id),
+      learningPackId: pack.id,
+      discoveryId: currentDiscovery.id,
     });
     const updated = new Set(collectedIds).add(currentDiscovery.id);
     setCollectedIds(updated);
@@ -129,14 +132,14 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     const nextIndex = nextIncompleteIndex(updated);
     destination.current =
       nextIndex >= 0 ? { type: 'discovery', index: nextIndex } : { type: 'close' };
-  }, [collectedIds, currentDiscovery, deck, explorerId, nextIncompleteIndex]);
+  }, [collectedIds, currentDiscovery, pack, explorerId, nextIncompleteIndex]);
 
   const handleAcknowledged = useCallback(() => {
-    if (replay && deck) {
+    if (replay && pack) {
       if (index < discoveries.length - 1) {
         setIndex((current) => current + 1);
       } else {
-        navigation.replace('Completion', { deckId: deck.id, badgeEarnedNow: false });
+        navigation.replace('Completion', { deckId: pack.id, badgeEarnedNow: false });
       }
       return;
     }
@@ -147,9 +150,9 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
       target = nextIndex >= 0 ? { type: 'discovery', index: nextIndex } : { type: 'close' };
     }
 
-    if (target.type === 'completion' && deck) {
+    if (target.type === 'completion' && pack) {
       navigation.replace('Completion', {
-        deckId: deck.id,
+        deckId: pack.id,
         badgeEarnedNow: target.badgeEarnedNow,
       });
     } else if (target.type === 'discovery') {
@@ -161,7 +164,7 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   }, [
     collectedIds,
     currentDiscovery,
-    deck,
+    pack,
     discoveries.length,
     index,
     navigation,
@@ -169,7 +172,7 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     replay,
   ]);
 
-  if (isLoading || !currentDiscovery) {
+  if (isLoading || !currentDiscovery || !world) {
     return <View className="flex-1 bg-cream" />;
   }
 
@@ -177,13 +180,14 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     <DiscoveryCard
       key={currentDiscovery.id}
       discovery={currentDiscovery}
+      worldId={world.themeKey}
       position={index + 1}
       total={discoveries.length}
       collected={collectedIds.has(currentDiscovery.id)}
       nextDiscoveryTitle={nextDiscoveryTitle}
       collectedActionLabel={
         replay && index === discoveries.length - 1
-          ? `FINISH EXPLORING ${worldThemes[currentDiscovery.category].label.toLocaleUpperCase()} →`
+          ? `FINISH EXPLORING ${world.title.toLocaleUpperCase()} →`
           : undefined
       }
       onCollect={handleCollect}
