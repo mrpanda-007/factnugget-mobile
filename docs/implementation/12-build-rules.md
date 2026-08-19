@@ -13,6 +13,38 @@
 
 A vertical slice means: UI + logic + data + offline + tests for one user-visible capability, end to end.
 
+## Android release builds
+
+The generated `android/` project is not committed. `app.json` and the local
+`withAndroidReleaseSigning` Expo config plugin are the reproducible sources of
+truth for the Android application ID and release signing configuration.
+
+For local release compile validation without a real signing key:
+
+```sh
+FACTNUGGETS_ANDROID_ALLOW_UNSIGNED_RELEASE=true ./gradlew :app:assembleRelease
+```
+
+Run that command from `android/`. It produces an explicitly unsigned validation
+artifact and must never be distributed. Without that opt-in, release tasks fail
+closed unless all four signing values are supplied through CI environment
+variables or untracked user-level Gradle properties:
+
+- `FACTNUGGETS_ANDROID_KEYSTORE_PATH`
+- `FACTNUGGETS_ANDROID_KEYSTORE_PASSWORD`
+- `FACTNUGGETS_ANDROID_KEY_ALIAS`
+- `FACTNUGGETS_ANDROID_KEY_PASSWORD`
+
+The keystore path may be machine-specific only in external configuration; no
+keystore or credential belongs in the repository or an `EXPO_PUBLIC_*`
+variable. A production signed APK or AAB uses the normal `assembleRelease` or
+`bundleRelease` task after all four values are securely injected. The real
+production/upload key is not configured in source control.
+
+For Google Play, use Play App Signing: Google retains the Play signing key and
+the externally managed upload key signs uploads. EAS Build may manage the upload
+key later, or CI may inject the same four values above.
+
 ---
 
 ## Definition of Done

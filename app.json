@@ -28,6 +28,12 @@
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": ["expo-font", "expo-sqlite", "expo-asset", "expo-iap"]
+    "plugins": [
+      "expo-font",
+      "expo-sqlite",
+      "expo-asset",
+      "expo-iap",
+      "./plugins/withAndroidReleaseSigning"
+    ]
   }
 }
