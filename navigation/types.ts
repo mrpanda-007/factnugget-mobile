@@ -28,6 +28,8 @@ export type MainTabParamList = {
 
 export type ExploreStackParamList = {
   DiscoverySelection: undefined;
+  /** Re-picking the onboarding look. Lives here, not in Onboarding, because that stack is unmounted for good once an identity exists (navigation/RootNavigator.tsx). */
+  ChangeLook: undefined;
   /** A canonical World's id/themeKey — see constants/tokens.ts#themeForWorldId. */
   WorldHome: { worldId: string };
   DiscoveryCard: { deckId: string; discoveryId?: string; replay?: boolean };

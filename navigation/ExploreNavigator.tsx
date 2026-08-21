@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { ChangeLookScreen } from '@features/explore/screens/ChangeLookScreen';
 import { CompletionScreen } from '@features/explore/screens/CompletionScreen';
 import { DiscoveryCardScreen } from '@features/explore/screens/DiscoveryCardScreen';
 import { DiscoverySelectionScreen } from '@features/explore/screens/DiscoverySelectionScreen';
@@ -16,6 +17,7 @@ export function ExploreNavigator() {
       <Stack.Screen name="WorldHome" component={WorldHomeScreen} />
       <Stack.Screen name="DiscoveryCard" component={DiscoveryCardScreen} />
       <Stack.Screen name="Completion" component={CompletionScreen} />
+      <Stack.Screen name="ChangeLook" component={ChangeLookScreen} />
     </Stack.Navigator>
   );
 }

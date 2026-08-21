@@ -3,8 +3,8 @@ import { ActivityIndicator, ScrollView, Text, useWindowDimensions, View } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 
-import { Avatar } from '@components/Avatar';
 import { Button } from '@components/Button';
+import { ChangeLookButton } from '@features/explore/components/ChangeLookButton';
 import { ExploreHeroCard } from '@features/explore/components/ExploreHeroCard';
 import { WorldChoiceCard } from '@features/explore/components/WorldChoiceCard';
 import { useWorldSummaries, type WorldSummary } from '@features/explore/hooks/useWorldSummaries';
@@ -134,7 +134,12 @@ export function DiscoverySelectionScreen({ navigation }: ExploreScreenProps<'Dis
       >
         <Animated.View entering={entrance} style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            {identity ? <Avatar identity={identity} size={52} /> : null}
+            {identity ? (
+              <ChangeLookButton
+                identity={identity}
+                onPress={() => navigation.navigate('ChangeLook')}
+              />
+            ) : null}
             <View style={{ flex: 1, gap: spacing.xs }}>
               <Text
                 style={{
