@@ -1,5 +1,5 @@
 import { createClient, type SanityClient } from '@sanity/client';
-import imageUrlBuilder from '@sanity/image-url';
+import { createImageUrlBuilder } from '@sanity/image-url';
 
 import { SANITY_API_VERSION } from './sanityEnv';
 
@@ -31,7 +31,7 @@ export function createSanityContentClient(dataset: string, projectId: string): S
 }
 
 let cachedBuilderClient: SanityClient | null = null;
-let cachedBuilder: ReturnType<typeof imageUrlBuilder> | null = null;
+let cachedBuilder: ReturnType<typeof createImageUrlBuilder> | null = null;
 
 /** Builds a CDN URL sized for the screen, not the original upload. */
 export function buildContentImageUrl(
@@ -41,7 +41,7 @@ export function buildContentImageUrl(
 ): string | null {
   if (!ref) return null;
   if (cachedBuilderClient !== client) {
-    cachedBuilder = imageUrlBuilder(client);
+    cachedBuilder = createImageUrlBuilder(client);
     cachedBuilderClient = client;
   }
   return cachedBuilder!.image(ref).width(width).quality(quality).auto('format').url();
