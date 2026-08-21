@@ -19,7 +19,7 @@ import {
   type LearningPackId,
   type WorldId,
 } from '../../types/domain/ids';
-import * as LegacyContentRepository from '../ContentRepository';
+import * as LegacyContentService from '../../services/ContentService';
 import { getCommerceKeyForLearningPack } from '../../commerce/catalogue';
 
 interface LegacyContentSource {
@@ -30,6 +30,15 @@ interface LegacyContentSource {
   getDiscoveriesForDeck(deckId: string): Promise<LegacyDiscovery[]>;
   getDiscovery(discoveryId: string): Promise<LegacyDiscovery | null>;
 }
+
+const bundledLegacyContentSource: LegacyContentSource = {
+  getCategories: LegacyContentService.fetchCategories,
+  getCategory: LegacyContentService.fetchCategory,
+  getDecksForCategory: LegacyContentService.fetchDecksForCategory,
+  getDeck: LegacyContentService.fetchDeck,
+  getDiscoveriesForDeck: LegacyContentService.fetchDiscoveriesForDeck,
+  getDiscovery: LegacyContentService.fetchDiscovery,
+};
 
 const fallbackBadge: WorldBadge = {
   title: 'World Explorer Badge',
@@ -100,7 +109,12 @@ function toDiscovery(discovery: LegacyDiscovery): Discovery {
  * mapped into the canonical domain.
  */
 export class LegacyContentRepositoryAdapter implements ContentRepositoryContract {
-  constructor(private readonly source: LegacyContentSource = LegacyContentRepository) {}
+  /**
+   * The bundled fallback must go straight to ContentService. Pointing it at
+   * ContentRepository would create a cycle once that legacy-facing repository
+   * is switched to the live Sanity/cache runtime.
+   */
+  constructor(private readonly source: LegacyContentSource = bundledLegacyContentSource) {}
 
   async listWorlds(): Promise<World[]> {
     const categories = (await this.source.getCategories()).filter(

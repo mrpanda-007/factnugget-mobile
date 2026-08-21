@@ -16,7 +16,11 @@ export function Avatar({ identity, size = 64 }: AvatarProps) {
   const theme = worldThemes[identityWorldId[identity]];
 
   return (
-    <View accessibilityRole="image" accessibilityLabel={option?.label ?? 'Explorer avatar'}>
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={option?.label ?? 'Explorer avatar'}
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+    >
       <IllustrationStage emoji={option?.emoji ?? '⭐'} theme={theme} size={size} shape="circle" />
     </View>
   );

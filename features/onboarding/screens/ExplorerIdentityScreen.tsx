@@ -17,9 +17,8 @@ export function ExplorerIdentityScreen({ navigation }: OnboardingScreenProps<'Ex
   const [selectedId, setSelectedId] = useState<ExplorerIdentityId | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const contentWidth = Math.min(width, 680);
   const horizontalPadding = width >= 700 ? spacing['2xl'] : spacing.lg;
-  const cardWidth = (contentWidth - horizontalPadding * 2 - spacing.md) / 2;
+  const avatarSize = 80;
 
   const confirmIdentity = async () => {
     if (!selectedId || isSaving) return;
@@ -84,7 +83,14 @@ export function ExplorerIdentityScreen({ navigation }: OnboardingScreenProps<'Ex
           </Text>
         </View>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: spacing.md,
+            justifyContent: 'center',
+          }}
+        >
           {explorerIdentityOptions.map((option) => {
             const selected = selectedId === option.id;
             return (

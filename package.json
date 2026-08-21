@@ -59,7 +59,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:firestore-rules": "firebase emulators:exec --project factnuggets-phase9e --only auth,firestore \"FIRESTORE_EMULATOR_TEST=true vitest run tests/firestoreRules.test.ts\"",
-    "test:phase9f": "npm --prefix functions run build && firebase emulators:exec --project factnuggets-phase9f --only auth,firestore,functions \"FIRESTORE_EMULATOR_TEST=true FUNCTIONS_EMULATOR_TEST=true vitest run tests/familyBootstrapFunctions.test.ts\"",
     "test:e2e": "firebase emulators:exec --project demo-factnuggets-phase11b --only auth,firestore,functions \"PHASE11B_EMULATOR_TEST=true vitest run tests/e2e\"",
     "test:phase11b": "npm --prefix functions run build && npm run test:e2e",
     "test:sanity-live-read": "SANITY_LIVE_READ_TEST=true vitest run tests/sanityLiveRead.test.ts",
