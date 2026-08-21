@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 
 import { Button } from '@components/Button';
+import { WorldBackground } from '@components/WorldBackground';
 import { CollectionBookCard } from '@features/collection/components/CollectionBookCard';
 import { CollectionDetailSheet } from '@features/collection/components/CollectionDetailSheet';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
@@ -18,7 +19,16 @@ import { ExplorerSummary } from '@features/collection/components/ExplorerSummary
 import { FeaturedCollection } from '@features/collection/components/FeaturedCollection';
 import { useCollections } from '@features/collection/hooks/useCollections';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
-import { animationDurations, colors, fontFamily, radius, spacing } from '@constants/tokens';
+import { identityWorldId } from '@constants/explorerIdentities';
+import {
+  animationDurations,
+  colors,
+  fontFamily,
+  radius,
+  spacing,
+  worldThemes,
+} from '@constants/tokens';
+import { useExplorerStore } from '@store/useExplorerStore';
 import type { ExplorerCollection } from '@features/collection/types';
 import type { CollectionScreenProps } from '@navigation/types';
 
@@ -38,6 +48,8 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
+  const identity = useExplorerStore((state) => state.identity);
+  const theme = identity ? worldThemes[identityWorldId[identity]] : null;
   const {
     collections,
     featured,
@@ -149,6 +161,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
+      {theme ? <WorldBackground world={theme} intensity="subtle" /> : null}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -398,7 +411,7 @@ export function CollectionScreen({ navigation }: CollectionScreenProps) {
             entering={entrance.delay(reducedMotion ? 0 : 300)}
             style={{
               borderRadius: radius.xl,
-              backgroundColor: colors.ocean50,
+              backgroundColor: colors.surface,
               padding: spacing.xl,
               gap: spacing.md,
             }}
