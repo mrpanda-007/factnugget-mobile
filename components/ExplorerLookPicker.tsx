@@ -4,8 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@components/Avatar';
 import { Button } from '@components/Button';
-import { explorerIdentityOptions } from '@constants/explorerIdentities';
-import { colors, elevation, fontFamily, radius, spacing } from '@constants/tokens';
+import { WorldBackground } from '@components/WorldBackground';
+import { explorerIdentityOptions, identityWorldId } from '@constants/explorerIdentities';
+import { colors, elevation, fontFamily, radius, spacing, worldThemes } from '@constants/tokens';
 import { useExplorerStore } from '@store/useExplorerStore';
 import type { ExplorerIdentityId } from '@app-types/ExplorerIdentity';
 
@@ -48,6 +49,9 @@ export function ExplorerLookPicker({
 
   const horizontalPadding = width >= 700 ? spacing['2xl'] : spacing.lg;
   const avatarSize = 80;
+  // Live preview: reacts to the in-progress selection, not the persisted
+  // identity, so it tints as a kid taps between cards before saving.
+  const previewTheme = selectedId ? worldThemes[identityWorldId[selectedId]] : null;
 
   const confirmIdentity = async () => {
     if (!selectedId || isSaving) return;
@@ -62,6 +66,7 @@ export function ExplorerLookPicker({
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
+      {previewTheme ? <WorldBackground world={previewTheme} intensity="subtle" /> : null}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
