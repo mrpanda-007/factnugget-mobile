@@ -117,7 +117,7 @@ export function BackupAndSyncSection() {
           backup.status === 'offline') &&
         form === 'none' ? (
           <View className="gap-sm">
-            <Button
+            {/* <Button
               label="Create parent account"
               onPress={() => setForm('create')}
               disabled={working}
@@ -127,7 +127,8 @@ export function BackupAndSyncSection() {
               onPress={() => setForm('signIn')}
               variant="secondary"
               disabled={working}
-            />
+            /> */}
+            <Text className="font-nunito-regular text-body-sm text-ink-600">Coming soon...</Text>
           </View>
         ) : null}
         {form === 'create' || form === 'signIn' ? (

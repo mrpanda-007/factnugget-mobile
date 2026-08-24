@@ -8,7 +8,6 @@ import { SpeakerIcon } from '@components/icons';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
 import { useParentProgress } from '@features/parent/hooks/useParentProgress';
 import { WorldBadge } from '@features/rewards/components/WorldBadge';
-import { RestorePurchasesSection } from '@features/parent/components/RestorePurchasesSection';
 import { BackupAndSyncSection } from '@features/parent/components/BackupAndSyncSection';
 import { colors } from '@constants/tokens';
 import { LegalLinksSection } from '@features/parent/components/LegalLinksSection';
@@ -127,8 +126,8 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
           Screen time built for curiosity
         </Text>
         <Text className="font-nunito-regular text-body-md text-ink-600">
-          FactNuggets gives children ages 5–8 a safe, finite way to discover amazing things about
-          the real world—without ads or an endless feed.
+          FactNuggets gives children, finite way to discover amazing things about the real world
+          without ads or an endless feed...
         </Text>
       </View>
 
@@ -288,8 +287,8 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
           />
           <TrustPoint
             icon="🌱"
-            title="Made for ages 5–8"
-            detail="Discoveries are written for FactNuggets' child age range."
+            title="Made for children only"
+            detail="Discoveries are written for FactNuggets' child audience."
           />
           <TrustPoint
             icon="👤"
@@ -323,35 +322,24 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
         </View>
       ) : null}
 
-      {shouldShowPaidPurchaseControls() ? <RestorePurchasesSection onRestored={refresh} /> : null}
+      {shouldShowPaidPurchaseControls() ? (
+        <View className="gap-md">
+          <Text
+            accessibilityRole="header"
+            className="font-fredoka-semibold text-display-md text-ink-900"
+          >
+            Purchases
+          </Text>
+          <Card className="gap-md" padding="lg">
+            <Text className="font-nunito-semibold text-body-md text-ink-900">
+              Restore Purchases
+            </Text>
+            <Text className="font-nunito-regular text-body-sm text-ink-600">Coming soon.</Text>
+          </Card>
+        </View>
+      ) : null}
 
       {isBackupAndSyncEnabled() ? <BackupAndSyncSection /> : null}
-
-      <View className="gap-md">
-        <Text
-          accessibilityRole="header"
-          className="font-fredoka-semibold text-display-md text-ink-900"
-        >
-          Settings
-        </Text>
-        <Card className="flex-row items-center justify-between" padding="lg">
-          <View className="flex-1 flex-row items-center gap-sm pr-md">
-            <SpeakerIcon muted={!soundEnabled} />
-            <View className="flex-1">
-              <Text className="font-nunito-semibold text-body-md text-ink-900">Sound effects</Text>
-              <Text className="font-nunito-regular text-body-sm text-ink-600">
-                Play gentle sounds during discovery and celebration.
-              </Text>
-            </View>
-          </View>
-          <Button
-            label={soundEnabled ? 'On' : 'Off'}
-            variant={soundEnabled ? 'primary' : 'secondary'}
-            onPress={toggleSound}
-            accessibilityLabel={`Sound effects ${soundEnabled ? 'on' : 'off'}. Activate to turn ${soundEnabled ? 'off' : 'on'}.`}
-          />
-        </Card>
-      </View>
 
       <LegalLinksSection />
     </ScrollView>
