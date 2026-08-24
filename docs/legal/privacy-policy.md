@@ -1,0 +1,166 @@
+# FactNuggets Privacy Policy
+
+**Effective date:** [INSERT DATE ON PUBLISH]
+**Last updated:** [INSERT DATE ON PUBLISH]
+
+> ⚠️ **Draft — requires review before publishing.** This document is written to accurately match how FactNuggets is built as of this writing, but it is not legal advice. Have a lawyer familiar with COPPA (US), GDPR-K (EU/UK), and your local children's-privacy law review this before it goes live, especially the parts in `[brackets]`.
+
+FactNuggets ("**the app**," "**we**," "**us**") is an offline-first educational app that helps children ages 5–8 explore the world through illustrated discovery cards, collectible stickers, and themed learning packs. We built FactNuggets around a simple rule: **we do not collect information from children, we do not show ads, and we do not build behavioral profiles of your child.** This policy explains exactly what data exists, where it lives, and who can see it.
+
+---
+
+## 1. Who operates this app
+
+FactNuggets is developed and operated by **[Legal name of developer/company]**, located at **[Business address, or "an individually operated developer" if a sole proprietor]**. You can reach us at **[support/privacy contact email]** with any question about this policy or your family's data.
+
+---
+
+## 2. Who this app is for
+
+FactNuggets is directed at children. It is designed for children ages **5–8**, and its Google Play and Apple App Store listings declare it accordingly. Because of this, the whole app — not just a "kids section" — is built to the stricter of the two platforms' children's-app rules (Google Play Families Policy Requirements and Apple's Kids Category / App Review Guideline 5.1.4).
+
+---
+
+## 3. The short version
+
+|                                                                      |                                                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Does the app work without an account?                                | Yes — always. No sign-up is required to use FactNuggets.                                                                                         |
+| Does a child ever type in personal information?                      | No. There is no text input, chat, username, or profile field a child fills in.                                                                   |
+| Do we show ads?                                                      | No. FactNuggets has no advertising and never will while marketed to children.                                                                    |
+| Do we use advertising identifiers (AAID/IDFA)?                       | No.                                                                                                                                              |
+| Do we track location?                                                | No. The app never requests location access.                                                                                                      |
+| Do we use the camera, microphone, or contacts?                       | No.                                                                                                                                              |
+| Can a parent create an account?                                      | Yes, optionally, to back up progress across devices. This requires a parent's email address.                                                     |
+| Does a child's profile ("Explorer") contain identifying information? | No. It contains only a randomly generated ID, a chosen cosmetic appearance, and timestamps — never a name, birthdate, photo, email, or location. |
+| Who handles payment information for purchases?                       | Apple App Store or Google Play Billing, directly. FactNuggets never sees or stores your card details.                                            |
+
+---
+
+## 4. Information we do **not** collect
+
+To be explicit about what does not happen inside FactNuggets:
+
+- We do not collect a child's name, birthdate, photo, voice, handwriting, or any biometric data.
+- We do not collect precise or coarse location.
+- We do not access the camera, microphone, contacts, or files on your device beyond what the app needs to store its own local data.
+- We do not use advertising identifiers (Android Advertising ID / Apple IDFA) or any persistent device identifier (IMEI, MAC address, SIM serial, etc.) for tracking.
+- We do not show advertising of any kind, so we do not share data with ad networks, ad exchanges, or data brokers.
+- We do not allow children to chat, message, or otherwise communicate with other people inside the app.
+- We do not sell personal information, in the ordinary sense or as defined by CCPA/CPRA.
+
+---
+
+## 5. Information the app stores locally, on-device
+
+By default, FactNuggets works entirely offline and stores everything on your device, in a local database (SQLite) that never leaves the device unless a parent explicitly turns on Backup & Sync (Section 6):
+
+- **Explorer profile** — a locally generated ID and a cosmetic appearance the child picks (for example, a character skin color). No name, age, or photo is ever requested.
+- **Learning progress** — which discovery cards have been viewed or collected, which learning packs and badges have been completed or earned, and when.
+- **App settings** — things like sound on/off, which are device-local and never leave the device.
+- **Purchase entitlement cache** — a local record of what has been purchased, kept in sync with Apple/Google (see Section 7). This is derived from the Store, not an independent source of truth.
+- **Educational content** — discovery cards, images, and pack content downloaded from our content platform (Sanity CMS) for offline use. This is app content, not information about your family.
+
+None of the above is transmitted anywhere unless a parent opts into cloud Backup & Sync.
+
+---
+
+## 6. Optional parent account and cloud backup ("Backup & Sync")
+
+FactNuggets can be used forever without ever creating an account. If a parent chooses to turn on Backup & Sync — so a child's progress can be recovered after a reinstall or carried to a second device — the following applies:
+
+- **Only a parent creates the account.** Account creation uses an email address and password (via Firebase Authentication). A child never sees or completes this flow; it lives behind the app's Parent Area.
+- **We collect the parent's email address** to create and secure that account, and to allow password resets. We do not use it for marketing and do not share it with third parties.
+- **A child's "Explorer" record, when synced to the cloud, still contains no personal information about the child** — only its opaque ID, its cosmetic appearance, and timestamps. Learning progress (which cards were viewed/collected, badges earned, pack completion) is synced tied to that anonymous ID, scoped to your family, never to the child's real identity.
+- **Cloud data is stored in Firebase (Google Cloud) and access is restricted by security rules** so that only the authenticated parent(s) belonging to a family can read or write that family's data. No other user, family, or unauthenticated request can access it.
+- **Signing in never automatically shares data across unrelated accounts.** A parent must take an explicit action to create or join a family; nothing is merged silently.
+- Turning Backup & Sync off, or never turning it on, has no effect on the app's core learning experience — it remains fully available offline.
+
+---
+
+## 7. Purchases
+
+FactNuggets may offer optional paid content (for example, additional discovery packs) using **Apple's App Store** (StoreKit) or **Google Play Billing** — never a third-party payment processor. This means:
+
+- We never see, collect, or store your payment card, billing address, or Apple/Google account credentials.
+- Apple and Google are the sole source of truth for what has been purchased; the app keeps a small local cache of "what's unlocked" that is verified against the Store, and can be restored using each platform's standard "Restore Purchases" mechanism.
+- Purchases are protected by the purchase-confirmation and parental controls built into the App Store and Google Play (including, where enabled by a family, Ask to Buy and Play Family purchase approvals) — FactNuggets does not bypass these.
+
+---
+
+## 8. Third-party services we use
+
+| Service                                           | What it's used for                                                | What it receives                                                                             |
+| ------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Firebase Authentication** (Google)              | Optional parent sign-in for Backup & Sync                         | Parent's email address and authentication credentials. Never used for a child.               |
+| **Firebase Firestore / Cloud Functions** (Google) | Stores synced learning progress if a parent enables Backup & Sync | Family-scoped progress data described in Section 6. No advertising or analytics use.         |
+| **Sanity** (content platform)                     | Delivers the app's educational cards, images, and pack content    | Content requests only — no personal or child data is sent to Sanity.                         |
+| **Apple App Store / Google Play Billing**         | Processes purchases                                               | Purchase/payment details, handled entirely by Apple/Google under their own privacy policies. |
+
+We do not use any advertising SDK, analytics SDK that profiles individual users, or third-party marketing tool. **[If Crashlytics, Firebase Analytics, or push notifications are added in a future version, this section and the app's Google Play Data Safety / Apple Nutrition Label disclosures will be updated first, and configured to avoid collecting anything that identifies a child, before that update ships.]**
+
+---
+
+## 9. How we secure data
+
+- Cloud data (Firestore) uses default-deny security rules: every request must belong to an authenticated parent who is a verified member of that specific family, and the structure/fields of every write are validated server-side.
+- Data in transit to and from our cloud services is encrypted (HTTPS/TLS).
+- We maintain separate development, staging, and production environments so test data is never mixed with real family data.
+
+---
+
+## 10. Data retention and deletion
+
+- **Local, on-device data** stays on the device until the app is uninstalled or the parent clears it from within the app.
+- **Cloud data** (only present if Backup & Sync was enabled) is retained until the parent requests deletion.
+- To request deletion of a parent account and all associated family/cloud data, contact us at **[privacy/support contact email]**. We will delete cloud-held data within [X] days of a verified request. This does not affect data already stored locally on your device, which you control directly.
+
+---
+
+## 11. Your (the parent's) rights and choices
+
+As the account holder, you can at any time:
+
+- Use FactNuggets without ever creating an account.
+- Turn Backup & Sync on or off from the Parent Area.
+- Request a copy of, or deletion of, the data associated with your parent account by contacting us.
+- Restore purchases independently through Apple or Google, regardless of account status.
+
+If you are located in the EU/UK/EEA, California, or another jurisdiction with statutory data-subject rights (GDPR, UK GDPR, CCPA/CPRA, etc.), those rights apply to the parent-account data described above; contact us at **[privacy contact email]** to exercise them. **[Counsel should confirm the specific legal bases, retention periods, and any required DPA/sub-processor list here.]**
+
+---
+
+## 12. Children's privacy (COPPA / GDPR-K)
+
+FactNuggets is designed so that **no personal information is ever collected directly from a child**:
+
+- There is no text input, username, chat, or upload feature available to a child inside the app.
+- The only account FactNuggets supports is a parent account, created and controlled by an adult in the Parent Area, which itself typically requires solving an adult-level task to reach.
+- A child's in-app profile ("Explorer") is limited to a random ID, a cosmetic appearance choice, and activity timestamps — never a name, age, birthdate, photo, or contact information.
+
+If we ever discover that personal information has been collected from a child in a way inconsistent with this policy, we will delete it promptly. Parents who believe this may have happened should contact us immediately at **[privacy contact email]**.
+
+---
+
+## 13. International users
+
+FactNuggets may be used by families outside the country where our servers are located. By using cloud Backup & Sync, you understand your family's account data (Section 6) may be processed in data centers operated by our service providers (e.g., Google Cloud, for Firebase) in accordance with their own security and privacy commitments. **[Counsel should confirm cross-border transfer mechanisms if targeting the EU/UK, e.g., SCCs.]**
+
+---
+
+## 14. Changes to this policy
+
+If we materially change what we collect or how we use it — including adding any new SDK, analytics, or feature that touches data — we will update this page and, where required by app store policy, prompt for renewed consent before the change takes effect. Continued use of Backup & Sync after a material change may require re-acknowledging this policy.
+
+---
+
+## 15. Contact us
+
+Questions about this policy or your family's data:
+
+**[Support/privacy email]**
+**[Optional: mailing address, if required by your counsel or by a specific regulator]**
+
+---
+
+_This policy describes FactNuggets version [X.X] as of [date]. It should be re-reviewed any time Firebase Analytics, Crashlytics, push notifications, or any new third-party SDK is added to the app, per `docs/implementation/03-firebase.md` and `docs/implementation/13-apple-kids-compliance.md`._
