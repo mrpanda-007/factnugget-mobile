@@ -31,9 +31,9 @@ FactNuggets is directed at children. It is designed for children ages **5–8**,
 | Do we use advertising identifiers (AAID/IDFA)?                       | No.                                                                                                                                              |
 | Do we track location?                                                | No. The app never requests location access.                                                                                                      |
 | Do we use the camera, microphone, or contacts?                       | No.                                                                                                                                              |
-| Can a parent create an account?                                      | Yes, optionally, to back up progress across devices. This requires a parent's email address.                                                     |
+| Can a parent create an account in the public Android release?        | No. Parent accounts and Backup & Sync are disabled in that release.                                                                              |
 | Does a child's profile ("Explorer") contain identifying information? | No. It contains only a randomly generated ID, a chosen cosmetic appearance, and timestamps — never a name, birthdate, photo, email, or location. |
-| Who handles payment information for purchases?                       | Apple App Store or Google Play Billing, directly. FactNuggets never sees or stores your card details.                                            |
+| Are purchases available in the public Android release?               | No. Purchases are disabled.                                                                                                                      |
 
 ---
 
@@ -53,21 +53,20 @@ To be explicit about what does not happen inside FactNuggets:
 
 ## 5. Information the app stores locally, on-device
 
-By default, FactNuggets works entirely offline and stores everything on your device, in a local database (SQLite) that never leaves the device unless a parent explicitly turns on Backup & Sync (Section 6):
+The public Android release works entirely offline and stores the following information in a local database (SQLite):
 
 - **Explorer profile** — a locally generated ID and a cosmetic appearance the child picks (for example, a character skin color). No name, age, or photo is ever requested.
 - **Learning progress** — which discovery cards have been viewed or collected, which learning packs and badges have been completed or earned, and when.
 - **App settings** — things like sound on/off, which are device-local and never leave the device.
-- **Purchase entitlement cache** — a local record of what has been purchased, kept in sync with Apple/Google (see Section 7). This is derived from the Store, not an independent source of truth.
 - **Educational content** — discovery cards, images, and pack content downloaded from our content platform (Sanity CMS) for offline use. This is app content, not information about your family.
 
-None of the above is transmitted anywhere unless a parent opts into cloud Backup & Sync.
+The app may request public educational content and images from Sanity. It does not send an Explorer profile, learning progress, account, purchase, contact, location, or advertising data with those requests. As with any internet connection, Sanity and network providers may receive technical connection data, such as IP address, device or browser information, request time, and server logs, to deliver and secure content. Parents can use bundled content while offline.
 
 ---
 
 ## 6. Optional parent account and cloud backup ("Backup & Sync")
 
-FactNuggets can be used forever without ever creating an account. If a parent chooses to turn on Backup & Sync — so a child's progress can be recovered after a reinstall or carried to a second device — the following applies:
+Parent accounts and Backup & Sync are disabled in the public Android release. The following describes a planned, parent-only feature and does not apply until a later release enables it with an updated policy and any required parental choices or consent:
 
 - **Only a parent creates the account.** Account creation uses an email address and password (via Firebase Authentication). A child never sees or completes this flow; it lives behind the app's Parent Area.
 - **We collect the parent's email address** to create and secure that account, and to allow password resets. We do not use it for marketing and do not share it with third parties.
@@ -80,7 +79,7 @@ FactNuggets can be used forever without ever creating an account. If a parent ch
 
 ## 7. Purchases
 
-FactNuggets may offer optional paid content (for example, additional discovery packs) using **Apple's App Store** (StoreKit) or **Google Play Billing** — never a third-party payment processor. This means:
+Purchases are disabled in the public Android release. If optional paid content is enabled in a later release, it will use **Apple's App Store** (StoreKit) or **Google Play Billing** — never a third-party payment processor. In that case:
 
 - We never see, collect, or store your payment card, billing address, or Apple/Google account credentials.
 - Apple and Google are the sole source of truth for what has been purchased; the app keeps a small local cache of "what's unlocked" that is verified against the Store, and can be restored using each platform's standard "Restore Purchases" mechanism.
@@ -90,12 +89,12 @@ FactNuggets may offer optional paid content (for example, additional discovery p
 
 ## 8. Third-party services we use
 
-| Service                                           | What it's used for                                                | What it receives                                                                             |
-| ------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| **Firebase Authentication** (Google)              | Optional parent sign-in for Backup & Sync                         | Parent's email address and authentication credentials. Never used for a child.               |
-| **Firebase Firestore / Cloud Functions** (Google) | Stores synced learning progress if a parent enables Backup & Sync | Family-scoped progress data described in Section 6. No advertising or analytics use.         |
-| **Sanity** (content platform)                     | Delivers the app's educational cards, images, and pack content    | Content requests only — no personal or child data is sent to Sanity.                         |
-| **Apple App Store / Google Play Billing**         | Processes purchases                                               | Purchase/payment details, handled entirely by Apple/Google under their own privacy policies. |
+| Service                                           | What it's used for                                                 | What it receives                                                                                |
+| ------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| **Sanity** (content platform)                     | Delivers the app's educational cards, images, and pack content     | Public-content requests and associated technical connection data; no Explorer or progress data. |
+| **Firebase Authentication** (Google)              | Planned parent sign-in for Backup & Sync; disabled in this release | Parent email address and authentication credentials only if the future feature is enabled.      |
+| **Firebase Firestore / Cloud Functions** (Google) | Planned cloud backup; disabled in this release                     | Family-scoped progress data only if the future feature is enabled.                              |
+| **Apple App Store / Google Play Billing**         | Planned purchases; disabled in this release                        | Purchase/payment details only if purchases are enabled, handled by Apple/Google.                |
 
 We do not use any advertising SDK, analytics SDK that profiles individual users, or third-party marketing tool. **[If Crashlytics, Firebase Analytics, or push notifications are added in a future version, this section and the app's Google Play Data Safety / Apple Nutrition Label disclosures will be updated first, and configured to avoid collecting anything that identifies a child, before that update ships.]**
 
@@ -122,9 +121,9 @@ We do not use any advertising SDK, analytics SDK that profiles individual users,
 As the account holder, you can at any time:
 
 - Use FactNuggets without ever creating an account.
-- Turn Backup & Sync on or off from the Parent Area.
+- Use the app without creating an account or enabling cloud backup in the public Android release.
 - Request a copy of, or deletion of, the data associated with your parent account by contacting us.
-- Restore purchases independently through Apple or Google, regardless of account status.
+- Keep purchases disabled in the public Android release.
 
 If you are located in the EU/UK/EEA, California, or another jurisdiction with statutory data-subject rights (GDPR, UK GDPR, CCPA/CPRA, etc.), those rights apply to the parent-account data described above; contact us at **[privacy contact email]** to exercise them. **[Counsel should confirm the specific legal bases, retention periods, and any required DPA/sub-processor list here.]**
 
@@ -135,7 +134,7 @@ If you are located in the EU/UK/EEA, California, or another jurisdiction with st
 FactNuggets is designed so that **no personal information is ever collected directly from a child**:
 
 - There is no text input, username, chat, or upload feature available to a child inside the app.
-- The only account FactNuggets supports is a parent account, created and controlled by an adult in the Parent Area, which itself typically requires solving an adult-level task to reach.
+- The public Android release supports no account. A future parent account, if enabled, will be created and controlled by an adult in the Parent Area, which requires an adult-level task to reach.
 - A child's in-app profile ("Explorer") is limited to a random ID, a cosmetic appearance choice, and activity timestamps — never a name, age, birthdate, photo, or contact information.
 
 If we ever discover that personal information has been collected from a child in a way inconsistent with this policy, we will delete it promptly. Parents who believe this may have happened should contact us immediately at **[privacy contact email]**.
