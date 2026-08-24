@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Easing,
-  FadeIn,
-  FadeOut,
-  useReducedMotion,
-  useSharedValue,
+  runOnJS,
+  SlideInLeft,
+  SlideInRight,
   useAnimatedStyle,
+  useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AdventureBackdrop } from '@components/DiscoveryAdventureScene';
 import { DiscoveryIllustration } from '@features/collection/components/DiscoveryIllustration';
-import { animationDurations, fontFamily, themeForWorldId } from '@constants/tokens';
+import { animationDurations, fontFamily, springs, themeForWorldId } from '@constants/tokens';
 import type { Discovery } from '@app-types/domain/content';
 
 interface DiscoveryCardProps {
@@ -26,93 +26,98 @@ interface DiscoveryCardProps {
   worldId: string;
   position: number;
   total: number;
-  collected: boolean;
-  nextDiscoveryTitle?: string;
-  collectedActionLabel?: string;
-  onCollect: () => Promise<void>;
-  onAcknowledged: () => void;
+  canGoBack: boolean;
+  isSaving: boolean;
+  saveFailed: boolean;
+  enterFrom: 'left' | 'right';
+  onSwipeNext: () => void;
+  onSwipeBack: () => void;
   onClose: () => void;
 }
 
-/**
- * One deliberate learning loop: subject → reveal → explicit collection.
- * Navigation is intentionally unavailable until the fact has been revealed,
- * and persistence is owned only by the primary collection action.
- */
+const SWIPE_COMMIT_RATIO = 0.25;
+const SWIPE_VELOCITY_THRESHOLD = 800;
+
+/** The fact is visible immediately; progress persists as the user swipes forward. */
 export function DiscoveryCard({
   discovery,
   worldId,
   position,
   total,
-  collected,
-  nextDiscoveryTitle,
-  collectedActionLabel,
-  onCollect,
-  onAcknowledged,
+  canGoBack,
+  isSaving,
+  saveFailed,
+  enterFrom,
+  onSwipeNext,
+  onSwipeBack,
   onClose,
 }: DiscoveryCardProps) {
   const theme = themeForWorldId(worldId);
   const insets = useSafeAreaInsets();
-  const reducedMotion = useReducedMotion();
   const { width, height } = useWindowDimensions();
-  const [revealed, setRevealed] = useState(collected);
-  const [isCollecting, setIsCollecting] = useState(false);
-  const [added, setAdded] = useState(false);
-  const [saveFailed, setSaveFailed] = useState(false);
-  const revealProgress = useSharedValue(collected ? 1 : 0);
 
   const cardWidth = Math.min(width - 36, 430);
   const cardHeight = Math.min(Math.max(height - insets.top - insets.bottom - 136, 470), 620);
   const artworkSize = Math.min(cardWidth * 0.58, 220);
 
-  useEffect(() => {
-    revealProgress.value = withTiming(revealed ? 1 : 0, {
-      duration: reducedMotion ? animationDurations.fast : 460,
-      easing: Easing.inOut(Easing.cubic),
-    });
-  }, [reducedMotion, revealProgress, revealed]);
+  const translateX = useSharedValue(0);
+  const exitDistance = cardWidth * 1.4;
 
-  const frontStyle = useAnimatedStyle(() => ({
-    opacity: 1 - revealProgress.value,
-    transform: [{ scale: 1 - revealProgress.value * 0.03 }],
-  }));
-  const revealStyle = useAnimatedStyle(() => ({
-    opacity: revealProgress.value,
-    transform: [{ translateY: (1 - revealProgress.value) * 12 }],
-  }));
-
-  const revealOnce = () => {
-    if (!revealed && !isCollecting) setRevealed(true);
-  };
-
-  const collect = async () => {
-    if (isCollecting) return;
-    if (collected) {
-      onAcknowledged();
+  const commitNext = () => {
+    if (isSaving) {
+      translateX.value = withSpring(0, springs.snappy);
       return;
     }
-
-    setIsCollecting(true);
-    setSaveFailed(false);
-    try {
-      await onCollect();
-      setAdded(true);
-      setTimeout(onAcknowledged, reducedMotion ? 160 : 560);
-    } catch {
-      setSaveFailed(true);
-      setIsCollecting(false);
-    }
+    translateX.value = withTiming(
+      -exitDistance,
+      { duration: animationDurations.base },
+      (finished) => {
+        if (finished) runOnJS(onSwipeNext)();
+      },
+    );
   };
 
-  const actionLabel = collected
-    ? nextDiscoveryTitle
-      ? `CONTINUE WITH ${nextDiscoveryTitle.toLocaleUpperCase()} →`
-      : (collectedActionLabel ?? `BACK TO ${theme.label.toLocaleUpperCase()} →`)
-    : `ADD ${discovery.title.toLocaleUpperCase()} TO MY DISCOVERIES →`;
-  const lowerTitle = discovery.title.toLocaleLowerCase();
-  const subjectPhrase = lowerTitle.startsWith('the ')
-    ? lowerTitle
-    : `${/^[aeiou]/.test(lowerTitle) ? 'an' : 'a'} ${lowerTitle}`;
+  const commitBack = () => {
+    if (!canGoBack) {
+      translateX.value = withSpring(0, springs.snappy);
+      return;
+    }
+    translateX.value = withTiming(
+      exitDistance,
+      { duration: animationDurations.base },
+      (finished) => {
+        if (finished) runOnJS(onSwipeBack)();
+      },
+    );
+  };
+
+  const cancelSwipe = () => {
+    translateX.value = withSpring(0, springs.snappy);
+  };
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      translateX.value = event.translationX;
+    })
+    .onEnd((event) => {
+      const commitThreshold = cardWidth * SWIPE_COMMIT_RATIO;
+      const commitsForward =
+        event.translationX < -commitThreshold || event.velocityX < -SWIPE_VELOCITY_THRESHOLD;
+      const commitsBack =
+        event.translationX > commitThreshold || event.velocityX > SWIPE_VELOCITY_THRESHOLD;
+
+      if (commitsForward) {
+        runOnJS(commitNext)();
+      } else if (commitsBack) {
+        runOnJS(commitBack)();
+      } else {
+        runOnJS(cancelSwipe)();
+      }
+    });
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   return (
     <View style={styles.screen}>
@@ -136,101 +141,47 @@ export function DiscoveryCard({
         <Text style={styles.worldText}>{theme.label}</Text>
       </View>
 
-      <View
-        style={[
-          styles.cardFrame,
-          {
-            width: cardWidth,
-            height: cardHeight,
-            top: insets.top + 72,
-          },
-        ]}
-      >
-        {!revealed ? (
-          <Animated.View style={[styles.face, styles.front, frontStyle]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${discovery.title}. Tap to discover what makes ${discovery.title} amazing.`}
-              onPress={revealOnce}
-              style={styles.primaryCardTap}
-            >
-              <View
-                accessible
-                accessibilityRole="image"
-                accessibilityLabel={`${discovery.title} artwork`}
-              >
-                <DiscoveryIllustration discovery={discovery} worldId={worldId} size={artworkSize} />
-              </View>
-              <Text style={styles.frontTitle}>{discovery.title}</Text>
-              <Text style={styles.frontPrompt}>
-                Tap to discover what makes{`\n`}
-                {subjectPhrase} amazing.
-              </Text>
-            </Pressable>
-          </Animated.View>
-        ) : (
-          <Animated.View style={[styles.face, styles.back, revealStyle]}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.revealContent}
-            >
-              <View
-                accessible
-                accessibilityRole="image"
-                accessibilityLabel={`${discovery.title} artwork`}
-                style={styles.revealArtwork}
-              >
-                <DiscoveryIllustration
-                  discovery={discovery}
-                  worldId={worldId}
-                  size={Math.min(artworkSize, 170)}
-                />
-              </View>
-              <Text style={styles.backTitle}>{discovery.title}</Text>
-              <Text style={styles.funFact}>{discovery.headlineFact}</Text>
-              <View style={[styles.factRibbon, { borderColor: theme.secondary }]}>
-                <Text style={styles.factRibbonText}>{discovery.explanation}</Text>
-              </View>
-              {saveFailed ? (
-                <Text accessibilityRole="alert" style={styles.errorText}>
-                  We couldn’t save that yet. Please try again.
-                </Text>
-              ) : null}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={actionLabel.replace(' →', '')}
-                accessibilityState={{ busy: isCollecting }}
-                disabled={isCollecting}
-                onPress={collect}
-                style={({ pressed }) => [
-                  styles.collectButton,
-                  { backgroundColor: theme.primary },
-                  pressed && styles.pressed,
-                  isCollecting && styles.disabled,
-                ]}
-              >
-                <Text style={styles.collectButtonText}>
-                  {isCollecting && !added ? 'ADDING…' : actionLabel}
-                </Text>
-              </Pressable>
-            </ScrollView>
-          </Animated.View>
-        )}
-      </View>
-
-      {added ? (
+      <GestureDetector gesture={panGesture}>
         <Animated.View
-          entering={reducedMotion ? FadeIn.duration(80) : FadeIn.duration(180)}
-          exiting={FadeOut.duration(100)}
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          style={styles.acknowledgement}
+          entering={enterFrom === 'left' ? SlideInLeft : SlideInRight}
+          style={[
+            styles.cardFrame,
+            {
+              width: cardWidth,
+              height: cardHeight,
+              top: insets.top + 72,
+            },
+            cardStyle,
+          ]}
         >
-          <DiscoveryIllustration discovery={discovery} worldId={worldId} size={76} />
-          <Text style={styles.addedTitle}>{discovery.title.toLocaleUpperCase()} ADDED!</Text>
-          <Text style={styles.addedSubtitle}>It’s now in My Discoveries.</Text>
+          <View style={styles.face}>
+            <View
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel={`${discovery.title} artwork`}
+              style={styles.artwork}
+            >
+              <DiscoveryIllustration discovery={discovery} worldId={worldId} size={artworkSize} />
+            </View>
+            <Text style={styles.title}>{discovery.title}</Text>
+            <Text style={styles.funFact}>{discovery.headlineFact}</Text>
+            <View style={[styles.factRibbon, { borderColor: theme.secondary }]}>
+              <Text style={styles.factRibbonText}>{discovery.explanation}</Text>
+            </View>
+            {saveFailed ? (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                We couldn’t save that yet. Swipe again to retry.
+              </Text>
+            ) : null}
+            <View style={styles.swipeHints}>
+              {canGoBack ? <Text style={styles.swipeHintText}>← Swipe back</Text> : <View />}
+              <Text style={styles.swipeHintText}>
+                {position < total ? 'Swipe for next discovery →' : 'Swipe to finish →'}
+              </Text>
+            </View>
+          </View>
         </Animated.View>
-      ) : null}
+      </GestureDetector>
     </View>
   );
 }
@@ -298,40 +249,13 @@ const styles = StyleSheet.create({
     borderColor: '#D9AC62',
     overflow: 'hidden',
     backgroundColor: '#FFF8E5',
-  },
-  front: { alignItems: 'stretch' },
-  primaryCardTap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  frontTitle: {
-    marginTop: 22,
-    color: '#473329',
-    fontFamily: fontFamily.displayBold,
-    fontSize: 32,
-    lineHeight: 38,
-    textAlign: 'center',
-  },
-  frontPrompt: {
-    marginTop: 14,
-    color: '#725A45',
-    fontFamily: fontFamily.bodySemiBold,
-    fontSize: 17,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  back: { padding: 0 },
-  revealContent: {
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 28,
+    paddingBottom: 20,
   },
-  revealArtwork: { alignItems: 'center' },
-  backTitle: {
+  artwork: { alignItems: 'center' },
+  title: {
     marginTop: 12,
     color: '#483329',
     fontFamily: fontFamily.displayBold,
@@ -364,23 +288,6 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     textAlign: 'center',
   },
-  collectButton: {
-    width: '100%',
-    minHeight: 58,
-    marginTop: 20,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  collectButtonText: {
-    color: '#FFF9E8',
-    fontFamily: fontFamily.bodyExtraBold,
-    fontSize: 15,
-    lineHeight: 21,
-    textAlign: 'center',
-  },
   errorText: {
     marginTop: 14,
     color: '#8C2F24',
@@ -389,33 +296,17 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     textAlign: 'center',
   },
-  pressed: { opacity: 0.86, transform: [{ scale: 0.985 }] },
-  disabled: { opacity: 0.7 },
-  acknowledgement: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: 20,
+  swipeHints: {
+    marginTop: 'auto',
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    padding: 30,
-    backgroundColor: '#FFF8E5F5',
+    justifyContent: 'space-between',
+    paddingTop: 16,
   },
-  addedTitle: {
-    color: '#473329',
-    fontFamily: fontFamily.displayBold,
-    fontSize: 30,
-    lineHeight: 36,
-    textAlign: 'center',
-  },
-  addedSubtitle: {
-    color: '#725A45',
+  swipeHintText: {
+    color: '#8C7457',
     fontFamily: fontFamily.bodySemiBold,
-    fontSize: 17,
-    lineHeight: 24,
-    textAlign: 'center',
+    fontSize: 14,
   },
 });

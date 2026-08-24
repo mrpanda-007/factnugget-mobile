@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { DiscoveryCard } from '@components/DiscoveryCard';
@@ -11,12 +11,7 @@ import { useExplorerStore } from '@store/useExplorerStore';
 import type { Discovery, LearningPack, World } from '@app-types/domain/content';
 import type { ExploreScreenProps } from '@navigation/types';
 
-type Destination =
-  | { type: 'discovery'; index: number }
-  | { type: 'completion'; badgeEarnedNow: boolean }
-  | { type: 'close' };
-
-/** The learning interaction persists only after the explicit Add action. */
+/** The fact is visible immediately; progress persists as the user swipes forward. */
 export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'DiscoveryCard'>) {
   const { deckId, discoveryId, replay = false } = route.params;
   const explorerId = useExplorerStore((state) => state.explorerId);
@@ -26,7 +21,9 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   const [collectedIds, setCollectedIds] = useState<Set<string>>(new Set());
   const [index, setIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const destination = useRef<Destination>({ type: 'close' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [enterFrom, setEnterFrom] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
     let cancelled = false;
@@ -95,82 +92,66 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     });
   }, [currentDiscovery, pack, explorerId, replay]);
 
-  const nextIncompleteIndex = useCallback(
-    (ids: Set<string>) => {
-      for (let offset = 1; offset <= discoveries.length; offset += 1) {
-        const candidate = (index + offset) % discoveries.length;
-        if (!ids.has(discoveries[candidate].id)) return candidate;
-      }
-      return -1;
-    },
-    [discoveries, index],
-  );
-
-  const nextDiscoveryTitle = useMemo(() => {
-    if (!currentDiscovery) return undefined;
-    if (replay) return discoveries[index + 1]?.title;
-    const nextIndex = nextIncompleteIndex(collectedIds);
-    return nextIndex >= 0 ? discoveries[nextIndex].title : undefined;
-  }, [collectedIds, currentDiscovery, discoveries, index, nextIncompleteIndex, replay]);
-
-  const handleCollect = useCallback(async () => {
-    if (!currentDiscovery || !pack) return;
-
-    if (!explorerId) throw new Error('An active Explorer is required to collect a Discovery.');
-    const result = await getDiscoveryProgressService().collectDiscovery({
-      explorerId,
-      learningPackId: pack.id,
-      discoveryId: currentDiscovery.id,
-    });
-    const updated = new Set(collectedIds).add(currentDiscovery.id);
-    setCollectedIds(updated);
-    if (result.learningPackCompletedNow) {
-      destination.current = { type: 'completion', badgeEarnedNow: result.worldBadgeEarnedNow };
-      return;
-    }
-
-    const nextIndex = nextIncompleteIndex(updated);
-    destination.current =
-      nextIndex >= 0 ? { type: 'discovery', index: nextIndex } : { type: 'close' };
-  }, [collectedIds, currentDiscovery, pack, explorerId, nextIncompleteIndex]);
-
-  const handleAcknowledged = useCallback(() => {
-    if (replay && pack) {
+  const handleSwipeNext = useCallback(async () => {
+    if (replay) {
+      setEnterFrom('right');
       if (index < discoveries.length - 1) {
         setIndex((current) => current + 1);
-      } else {
+      } else if (pack) {
         navigation.replace('Completion', { deckId: pack.id, badgeEarnedNow: false });
       }
       return;
     }
+    if (!currentDiscovery || !pack || !explorerId) return;
 
-    let target = destination.current;
-    if (target.type === 'close' && currentDiscovery && collectedIds.has(currentDiscovery.id)) {
-      const nextIndex = nextIncompleteIndex(collectedIds);
-      target = nextIndex >= 0 ? { type: 'discovery', index: nextIndex } : { type: 'close' };
+    const alreadyCollected = collectedIds.has(currentDiscovery.id);
+    let learningPackCompletedNow = false;
+    let worldBadgeEarnedNow = false;
+
+    if (!alreadyCollected) {
+      setIsSaving(true);
+      setSaveFailed(false);
+      try {
+        const result = await getDiscoveryProgressService().collectDiscovery({
+          explorerId,
+          learningPackId: pack.id,
+          discoveryId: currentDiscovery.id,
+        });
+        setCollectedIds((prev) => new Set(prev).add(currentDiscovery.id));
+        learningPackCompletedNow = result.learningPackCompletedNow;
+        worldBadgeEarnedNow = result.worldBadgeEarnedNow;
+      } catch {
+        setSaveFailed(true);
+        setIsSaving(false);
+        return;
+      }
+      setIsSaving(false);
     }
 
-    if (target.type === 'completion' && pack) {
-      navigation.replace('Completion', {
-        deckId: pack.id,
-        badgeEarnedNow: target.badgeEarnedNow,
-      });
-    } else if (target.type === 'discovery') {
-      destination.current = { type: 'close' };
-      setIndex(target.index);
+    setEnterFrom('right');
+    if (learningPackCompletedNow) {
+      navigation.replace('Completion', { deckId: pack.id, badgeEarnedNow: worldBadgeEarnedNow });
+    } else if (index < discoveries.length - 1) {
+      setIndex((current) => current + 1);
     } else {
       navigation.goBack();
     }
   }, [
-    collectedIds,
+    replay,
     currentDiscovery,
     pack,
-    discoveries.length,
+    explorerId,
+    collectedIds,
     index,
+    discoveries.length,
     navigation,
-    nextIncompleteIndex,
-    replay,
   ]);
+
+  const handleSwipeBack = useCallback(() => {
+    setEnterFrom('left');
+    setSaveFailed(false);
+    setIndex((current) => Math.max(0, current - 1));
+  }, []);
 
   if (isLoading || !currentDiscovery || !world) {
     return <View className="flex-1 bg-cream" />;
@@ -183,15 +164,12 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
       worldId={world.themeKey}
       position={index + 1}
       total={discoveries.length}
-      collected={collectedIds.has(currentDiscovery.id)}
-      nextDiscoveryTitle={nextDiscoveryTitle}
-      collectedActionLabel={
-        replay && index === discoveries.length - 1
-          ? `FINISH EXPLORING ${world.title.toLocaleUpperCase()} →`
-          : undefined
-      }
-      onCollect={handleCollect}
-      onAcknowledged={handleAcknowledged}
+      canGoBack={index > 0}
+      isSaving={isSaving}
+      saveFailed={saveFailed}
+      enterFrom={enterFrom}
+      onSwipeNext={handleSwipeNext}
+      onSwipeBack={handleSwipeBack}
       onClose={() => navigation.goBack()}
     />
   );
