@@ -174,9 +174,9 @@ export function DiscoveryCard({
               </Text>
             ) : null}
             <View style={styles.swipeHints}>
-              {canGoBack ? <Text style={styles.swipeHintText}>← Swipe back</Text> : <View />}
+              {canGoBack ? <Text style={styles.swipeHintText}>←</Text> : <View />}
               <Text style={styles.swipeHintText}>
-                {position < total ? 'Swipe for next discovery →' : 'Swipe to finish →'}
+                {position < total ? '→' : 'Swipe to finish →'}
               </Text>
             </View>
           </View>

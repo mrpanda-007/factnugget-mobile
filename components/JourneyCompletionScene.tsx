@@ -20,8 +20,11 @@ import type { Discovery, World } from '@app-types/domain/content';
 
 interface JourneyCompletionSceneProps {
   world: World;
+  packTitle: string;
   discoveries: Discovery[];
   badgeEarnedNow: boolean;
+  /** Whether the World Badge has been earned at all yet (now or previously) — false when other required Packs remain. */
+  badgeAvailable: boolean;
   nextWorld: WorldSummary | null;
   onSeeDiscoveries: () => void;
   onExploreNext: () => void;
@@ -30,12 +33,16 @@ interface JourneyCompletionSceneProps {
 /**
  * The completion route presents state that DiscoveryCardScreen already
  * persisted. Discoveries remain the achievement; the deck's single World Badge
- * is the only reward represented here or later in My Discoveries.
+ * is the only reward represented here or later in My Discoveries. A Pack
+ * completion doesn't always earn the Badge — a World can require several
+ * Packs — so the Badge module only appears once `badgeAvailable`.
  */
 export function JourneyCompletionScene({
   world,
+  packTitle,
   discoveries,
   badgeEarnedNow,
+  badgeAvailable,
   nextWorld,
   onSeeDiscoveries,
   onExploreNext,
@@ -59,7 +66,9 @@ export function JourneyCompletionScene({
     const controlsDelay = reducedMotion ? 0 : badgeEarnedNow ? 1700 : 250;
     const completionAnnouncement = badgeEarnedNow
       ? `${worldTitle} complete. You found all ${discoveries.length} discoveries.`
-      : `${worldTitle} explored again. ${world.badge.title} already earned.`;
+      : badgeAvailable
+        ? `${worldTitle} explored again. ${world.badge.title} already earned.`
+        : `${packTitle} complete. You found all ${discoveries.length} discoveries.`;
 
     const announcementTimer = setTimeout(
       () => {
@@ -80,7 +89,15 @@ export function JourneyCompletionScene({
       clearTimeout(badgeTimer);
       clearTimeout(controlsTimer);
     };
-  }, [badgeEarnedNow, world.badge.title, discoveries.length, reducedMotion, worldTitle]);
+  }, [
+    badgeEarnedNow,
+    badgeAvailable,
+    packTitle,
+    world.badge.title,
+    discoveries.length,
+    reducedMotion,
+    worldTitle,
+  ]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
@@ -112,7 +129,11 @@ export function JourneyCompletionScene({
               textAlign: 'center',
             }}
           >
-            {badgeEarnedNow ? `${worldTitle} Complete!` : `${worldTitle} explored again!`}
+            {badgeEarnedNow
+              ? `${worldTitle} Complete!`
+              : badgeAvailable
+                ? `${worldTitle} explored again!`
+                : `${packTitle} Complete!`}
           </Text>
           <Text
             style={{
@@ -125,7 +146,9 @@ export function JourneyCompletionScene({
           >
             {badgeEarnedNow
               ? `You found all ${discoveries.length} discoveries.`
-              : 'You revisited every discovery.'}
+              : badgeAvailable
+                ? 'You revisited every discovery.'
+                : `You found all ${discoveries.length} discoveries in this Pack.`}
           </Text>
         </Animated.View>
 
@@ -184,7 +207,7 @@ export function JourneyCompletionScene({
           </View>
         </Animated.View>
 
-        {badgeVisible ? (
+        {badgeVisible && badgeAvailable ? (
           <Animated.View
             entering={
               reducedMotion ? FadeIn.duration(80) : FadeInUp.duration(700).springify().damping(16)

@@ -11,7 +11,7 @@ FactNuggets ("**the app**," "**we**," "**us**") is an offline-first educational 
 
 ## 1. Who operates this app
 
-FactNuggets is developed and operated by **[Legal name of developer/company]**, located at **[Business address, or "an individually operated developer" if a sole proprietor]**. You can reach us at **[support/privacy contact email]** with any question about this policy or your family's data.
+FactNuggets is developed and operated by **[Your name, as an individual developer]**. You can reach us at **[support/privacy contact email]** with any question about this policy or your family's data. FactNuggets is currently operated as an individual developer, not a registered company; no physical mailing address is published.
 
 ---
 
@@ -158,7 +158,6 @@ If we materially change what we collect or how we use it — including adding an
 Questions about this policy or your family's data:
 
 **[Support/privacy email]**
-**[Optional: mailing address, if required by your counsel or by a specific regulator]**
 
 ---
 

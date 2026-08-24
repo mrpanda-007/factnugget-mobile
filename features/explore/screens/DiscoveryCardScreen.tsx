@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { DiscoveryCard } from '@components/DiscoveryCard';
 import { liveContentRepository } from '../../../application/content/contentRuntime';
@@ -10,6 +10,18 @@ import { parseLearningPackId } from '@app-types/domain/ids';
 import { useExplorerStore } from '@store/useExplorerStore';
 import type { Discovery, LearningPack, World } from '@app-types/domain/content';
 import type { ExploreScreenProps } from '@navigation/types';
+
+const prefetchedImageUrls = new Set<string>();
+
+function prefetchDiscoveryImage(discovery: Discovery | undefined): Promise<void> {
+  const url = discovery?.images[0]?.url;
+  if (!url || prefetchedImageUrls.has(url)) return Promise.resolve();
+  prefetchedImageUrls.add(url);
+  return Image.prefetch(url).then(
+    () => undefined,
+    () => undefined,
+  );
+}
 
 /** The fact is visible immediately; progress persists as the user swipes forward. */
 export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'DiscoveryCard'>) {
@@ -65,14 +77,20 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
         ? discoveryResults.findIndex((item) => item.id === discoveryId)
         : -1;
       const firstIncompleteIndex = discoveryResults.findIndex((item) => !completed.has(item.id));
+      const resolvedIndex =
+        requestedIndex >= 0 ? requestedIndex : firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
+
+      await prefetchDiscoveryImage(discoveryResults[resolvedIndex]);
+      if (cancelled) return;
+      discoveryResults.forEach((discovery, position) => {
+        if (position !== resolvedIndex) void prefetchDiscoveryImage(discovery);
+      });
 
       setPack(packResult);
       setWorld(worldResult);
       setDiscoveries(discoveryResults);
       setCollectedIds(completed);
-      setIndex(
-        requestedIndex >= 0 ? requestedIndex : firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0,
-      );
+      setIndex(resolvedIndex);
       setIsLoading(false);
     }
     load();

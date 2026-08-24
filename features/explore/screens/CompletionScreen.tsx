@@ -60,7 +60,7 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
     [data, summaries],
   );
 
-  if (!data || !data.badgePersisted) return <View className="flex-1 bg-cream" />;
+  if (!data) return <View className="flex-1 bg-cream" />;
 
   const resetExplore = () => {
     navigation.reset({ index: 0, routes: [{ name: 'DiscoverySelection' }] });
@@ -69,8 +69,10 @@ export function CompletionScreen({ route, navigation }: ExploreScreenProps<'Comp
   return (
     <JourneyCompletionScene
       world={data.world}
+      packTitle={data.pack.title}
       discoveries={data.discoveries}
       badgeEarnedNow={badgeEarnedNow}
+      badgeAvailable={data.badgePersisted}
       nextWorld={nextWorld}
       onSeeDiscoveries={() => {
         resetExplore();
