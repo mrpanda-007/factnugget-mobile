@@ -10,6 +10,7 @@ import { parseDiscoveryId, parseWorldId } from '@app-types/domain/ids';
 
 interface WorldHomeState {
   isLoading: boolean;
+  loadFailed: boolean;
   world: World | null;
   pack: LearningPack | null;
   deckProgress: DeckProgress | null;
@@ -22,6 +23,7 @@ interface WorldHomeState {
 
 const initialState: WorldHomeState = {
   isLoading: true,
+  loadFailed: false,
   world: null,
   pack: null,
   deckProgress: null,
@@ -44,55 +46,62 @@ export function useWorldHome(worldIdParam: string) {
   const [state, setState] = useState<WorldHomeState>(initialState);
 
   const load = useCallback(async () => {
-    const worldId = parseWorldId(worldIdParam);
-    const [world, packs] = await Promise.all([
-      liveContentRepository.getWorld(worldId),
-      liveContentRepository.listLearningPacksForWorld(worldId),
-    ]);
-    const pack = packs[0] ?? null;
-    if (!pack) {
-      setState({ ...initialState, isLoading: false, world, accessState: 'unavailable' });
-      return;
-    }
-    const access = await getLearningPackAccessService().getLearningPackAccess(pack.id);
-    if (access.state !== 'allowed') {
-      setState({ ...initialState, isLoading: false, world, pack, accessState: 'locked' });
-      return;
-    }
-    const collected = await ProgressRepository.getCollection();
-    const [deckProgress, packDiscoveries, worldBadge] = await Promise.all([
-      ProgressRepository.getDeckProgress(pack.id),
-      liveContentRepository.listPackDiscoveries(pack.id),
-      ProgressRepository.getWorldBadge(worldId),
-    ]);
-    const discoveries = packDiscoveries.map(({ discovery }) => discovery);
+    setState((current) => ({ ...current, isLoading: true, loadFailed: false }));
+    try {
+      const worldId = parseWorldId(worldIdParam);
+      const [world, packs] = await Promise.all([
+        liveContentRepository.getWorld(worldId),
+        liveContentRepository.listLearningPacksForWorld(worldId),
+      ]);
+      const pack = packs[0] ?? null;
+      if (!pack) {
+        setState({ ...initialState, isLoading: false, world, accessState: 'unavailable' });
+        return;
+      }
+      const access = await getLearningPackAccessService().getLearningPackAccess(pack.id);
+      if (access.state !== 'allowed') {
+        setState({ ...initialState, isLoading: false, world, pack, accessState: 'locked' });
+        return;
+      }
+      const collected = await ProgressRepository.getCollection();
+      const [deckProgress, packDiscoveries, worldBadge] = await Promise.all([
+        ProgressRepository.getDeckProgress(pack.id),
+        liveContentRepository.listPackDiscoveries(pack.id),
+        ProgressRepository.getWorldBadge(worldId),
+      ]);
+      const discoveries = packDiscoveries.map(({ discovery }) => discovery);
 
-    let collectionPreview: Discovery[] = [];
-    if (collected.length > 0) {
-      const discoveriesById = new Map(discoveries.map((discovery) => [discovery.id, discovery]));
-      const relevantIds = collected
-        .map((item) => parseDiscoveryId(item.discoveryId))
-        .filter((id) => discoveriesById.has(id))
-        .slice(0, 4);
-      collectionPreview = relevantIds
-        .map((id) => discoveriesById.get(id))
-        .filter((discovery): discovery is Discovery => discovery !== undefined);
+      let collectionPreview: Discovery[] = [];
+      if (collected.length > 0) {
+        const discoveriesById = new Map(discoveries.map((discovery) => [discovery.id, discovery]));
+        const relevantIds = collected
+          .map((item) => parseDiscoveryId(item.discoveryId))
+          .filter((id) => discoveriesById.has(id))
+          .slice(0, 4);
+        collectionPreview = relevantIds
+          .map((id) => discoveriesById.get(id))
+          .filter((discovery): discovery is Discovery => discovery !== undefined);
+      }
+
+      const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
+      const nextDiscovery =
+        discoveries.find((discovery) => !completedIds.has(discovery.id)) ?? null;
+
+      setState({
+        isLoading: false,
+        loadFailed: false,
+        world,
+        pack,
+        deckProgress,
+        worldBadge,
+        discoveries,
+        collectionPreview,
+        nextDiscovery,
+        accessState: 'allowed',
+      });
+    } catch {
+      setState({ ...initialState, isLoading: false, loadFailed: true });
     }
-
-    const completedIds = new Set(deckProgress?.completedDiscoveryIds ?? []);
-    const nextDiscovery = discoveries.find((discovery) => !completedIds.has(discovery.id)) ?? null;
-
-    setState({
-      isLoading: false,
-      world,
-      pack,
-      deckProgress,
-      worldBadge,
-      discoveries,
-      collectionPreview,
-      nextDiscovery,
-      accessState: 'allowed',
-    });
   }, [worldIdParam]);
 
   return { ...state, refresh: load };

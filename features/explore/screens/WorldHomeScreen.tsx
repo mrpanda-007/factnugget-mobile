@@ -19,6 +19,7 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
   const { width } = useWindowDimensions();
   const {
     isLoading,
+    loadFailed,
     world,
     pack,
     deckProgress,
@@ -47,6 +48,43 @@ export function WorldHomeScreen({ route, navigation }: ExploreScreenProps<'World
       },
     });
   }, [accessState, pack, navigation]);
+
+  if (loadFailed) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: spacing.lg,
+          padding: spacing['2xl'],
+          backgroundColor: colors.cream,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.ink900,
+            fontFamily: fontFamily.displaySemiBold,
+            fontSize: 24,
+            textAlign: 'center',
+          }}
+        >
+          This world needs a moment.
+        </Text>
+        <Text
+          style={{
+            color: colors.ink600,
+            fontFamily: fontFamily.bodyRegular,
+            fontSize: 16,
+            textAlign: 'center',
+          }}
+        >
+          Your discoveries are safe. Let’s try again.
+        </Text>
+        <Button label="Try Again" onPress={refresh} />
+      </View>
+    );
+  }
 
   if (accessState !== 'allowed') {
     return <View className="flex-1 bg-cream" />;

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
+import { Button } from '@components/Button';
 import { DiscoveryCard } from '@components/DiscoveryCard';
 import { liveContentRepository } from '../../../application/content/contentRuntime';
 import * as ProgressRepository from '@repositories/ProgressRepository';
 import { getDiscoveryProgressService } from '../../../application/discoveryProgressRuntime';
 import { getLearningPackAccessService } from '../../../application/commerce/commerceRuntime';
+import { colors, fontFamily, spacing } from '@constants/tokens';
 import { parseLearningPackId } from '@app-types/domain/ids';
 import { useExplorerStore } from '@store/useExplorerStore';
 import type { Discovery, LearningPack, World } from '@app-types/domain/content';
@@ -33,6 +35,8 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   const [collectedIds, setCollectedIds] = useState<Set<string>>(new Set());
   const [index, setIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [enterFrom, setEnterFrom] = useState<'left' | 'right'>('right');
@@ -40,64 +44,77 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const packId = parseLearningPackId(deckId);
-      const [packResult, access] = await Promise.all([
-        liveContentRepository.getLearningPack(packId),
-        getLearningPackAccessService().getLearningPackAccess(packId),
-      ]);
-      if (cancelled) return;
+      setIsLoading(true);
+      setLoadFailed(false);
+      try {
+        const packId = parseLearningPackId(deckId);
+        const [packResult, access] = await Promise.all([
+          liveContentRepository.getLearningPack(packId),
+          getLearningPackAccessService().getLearningPackAccess(packId),
+        ]);
+        if (cancelled) return;
 
-      if (access.state !== 'allowed') {
-        if (packResult) {
-          navigation.navigate('Parent', {
-            screen: 'Area',
-            params: {
-              deckId: packResult.id,
-              requestedPackTitle: packResult.title,
-              requestId: String(Date.now()),
-            },
-          });
-        } else {
-          navigation.goBack();
+        if (access.state !== 'allowed') {
+          if (packResult) {
+            navigation.navigate('Parent', {
+              screen: 'Area',
+              params: {
+                deckId: packResult.id,
+                requestedPackTitle: packResult.title,
+                requestId: String(Date.now()),
+              },
+            });
+          } else {
+            navigation.goBack();
+          }
+          return;
         }
-        return;
+
+        const [packDiscoveries, worldResult, progress] = await Promise.all([
+          liveContentRepository.listPackDiscoveries(packId),
+          packResult ? liveContentRepository.getWorld(packResult.worldId) : Promise.resolve(null),
+          ProgressRepository.getDeckProgress(deckId),
+        ]);
+        await ProgressRepository.startOrTouchDeck(deckId);
+        if (cancelled) return;
+
+        const discoveryResults = packDiscoveries.map(({ discovery }) => discovery);
+        const completed = new Set(progress?.completedDiscoveryIds ?? []);
+        const requestedIndex = discoveryId
+          ? discoveryResults.findIndex((item) => item.id === discoveryId)
+          : -1;
+        const firstIncompleteIndex = discoveryResults.findIndex((item) => !completed.has(item.id));
+        const resolvedIndex =
+          requestedIndex >= 0
+            ? requestedIndex
+            : firstIncompleteIndex >= 0
+              ? firstIncompleteIndex
+              : 0;
+
+        await prefetchDiscoveryImage(discoveryResults[resolvedIndex]);
+        if (cancelled) return;
+        discoveryResults.forEach((discovery, position) => {
+          if (position !== resolvedIndex) void prefetchDiscoveryImage(discovery);
+        });
+
+        setPack(packResult);
+        setWorld(worldResult);
+        setDiscoveries(discoveryResults);
+        setCollectedIds(completed);
+        setIndex(resolvedIndex);
+        setIsLoading(false);
+      } catch {
+        if (!cancelled) {
+          setIsLoading(false);
+          setLoadFailed(true);
+        }
       }
-
-      const [packDiscoveries, worldResult, progress] = await Promise.all([
-        liveContentRepository.listPackDiscoveries(packId),
-        packResult ? liveContentRepository.getWorld(packResult.worldId) : Promise.resolve(null),
-        ProgressRepository.getDeckProgress(deckId),
-      ]);
-      await ProgressRepository.startOrTouchDeck(deckId);
-      if (cancelled) return;
-
-      const discoveryResults = packDiscoveries.map(({ discovery }) => discovery);
-      const completed = new Set(progress?.completedDiscoveryIds ?? []);
-      const requestedIndex = discoveryId
-        ? discoveryResults.findIndex((item) => item.id === discoveryId)
-        : -1;
-      const firstIncompleteIndex = discoveryResults.findIndex((item) => !completed.has(item.id));
-      const resolvedIndex =
-        requestedIndex >= 0 ? requestedIndex : firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
-
-      await prefetchDiscoveryImage(discoveryResults[resolvedIndex]);
-      if (cancelled) return;
-      discoveryResults.forEach((discovery, position) => {
-        if (position !== resolvedIndex) void prefetchDiscoveryImage(discovery);
-      });
-
-      setPack(packResult);
-      setWorld(worldResult);
-      setDiscoveries(discoveryResults);
-      setCollectedIds(completed);
-      setIndex(resolvedIndex);
-      setIsLoading(false);
     }
     load();
     return () => {
       cancelled = true;
     };
-  }, [deckId, discoveryId, explorerId, replay]);
+  }, [deckId, discoveryId, explorerId, replay, retryKey]);
 
   const currentDiscovery = discoveries[index];
 
@@ -170,6 +187,43 @@ export function DiscoveryCardScreen({ route, navigation }: ExploreScreenProps<'D
     setSaveFailed(false);
     setIndex((current) => Math.max(0, current - 1));
   }, []);
+
+  if (loadFailed) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: spacing.lg,
+          padding: spacing['2xl'],
+          backgroundColor: colors.cream,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.ink900,
+            fontFamily: fontFamily.displaySemiBold,
+            fontSize: 24,
+            textAlign: 'center',
+          }}
+        >
+          This discovery needs a moment.
+        </Text>
+        <Text
+          style={{
+            color: colors.ink600,
+            fontFamily: fontFamily.bodyRegular,
+            fontSize: 16,
+            textAlign: 'center',
+          }}
+        >
+          Your progress is safe. Let’s try again.
+        </Text>
+        <Button label="Try Again" onPress={() => setRetryKey((current) => current + 1)} />
+      </View>
+    );
+  }
 
   if (isLoading || !currentDiscovery || !world) {
     return <View className="flex-1 bg-cream" />;
