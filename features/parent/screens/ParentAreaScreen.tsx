@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, ScrollView, Text, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@components/Button';
@@ -101,6 +101,22 @@ export function ParentAreaScreen({ navigation, route }: ParentScreenProps<'Area'
     handledPackRequestId.current = requestedPackRequestId;
     navigation.navigate('PackPreview', { deckId: requestedDeckId });
   }, [isUnlocked, navigation, requestedDeckId, requestedPackRequestId]);
+
+  useEffect(() => {
+    const tabNavigation = navigation.getParent();
+    const unsubscribeBlur = tabNavigation?.addListener('blur', () => setIsUnlocked(false));
+
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') {
+        setIsUnlocked(false);
+      }
+    });
+
+    return () => {
+      unsubscribeBlur?.();
+      appStateSubscription.remove();
+    };
+  }, [navigation]);
 
   if (!isUnlocked) {
     return (
